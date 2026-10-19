@@ -1,0 +1,49 @@
+name: APK de teste
+
+# Gera um APK instalável (release otimizado, assinado com uma chave temporária) a cada push
+# na branch de trabalho. Não precisa de segredos nem publica nada: o APK fica em "Artifacts".
+on:
+  push:
+    branches: [ 'claude/**' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: zulu
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Criar chave de assinatura temporária
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/teste.jks" -alias melonds \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass senha-temporaria -keypass senha-temporaria \
+            -dname "CN=melonDS teste"
+          {
+            echo "MELONDS_KEYSTORE=$RUNNER_TEMP/teste.jks"
+            echo "MELONDS_KEYSTORE_PASSWORD=senha-temporaria"
+            echo "MELONDS_KEY_ALIAS=melonds"
+            echo "MELONDS_KEY_PASSWORD=senha-temporaria"
+          } >> local.properties
+
+      - name: Compilar
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleGitHubNightlyRelease
+
+      - name: Enviar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: melonDS-android-teste
+          path: app/build/outputs/apk/gitHubNightly/release/*.apk
