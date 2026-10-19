@@ -1,3 +1,4 @@
+#include <cmath>
 #include <ctime>
 #include <chrono>
 #include <EGL/egl.h>
@@ -397,6 +398,10 @@ u32 MelonInstance::runFrame()
         firmwareSave->CheckFlush();
 
     frame++;
+    framesSinceRtcSync++;
+    if (framesSinceRtcSync % 60 == 0) [[unlikely]]
+        resyncDateTimeIfDrifted();
+
     bool needsRewindCapture = rewindManager.ShouldCaptureState(frame);
     bool needsScreenshot = screenshotRenderer->isScreenshotPending();
 
@@ -708,6 +713,22 @@ void MelonInstance::setDateTime()
     std::tm* now = std::localtime(&t);
 
     nds->RTC.SetDateTime(now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+
+    rtcSyncWallTime = std::chrono::steady_clock::now();
+    framesSinceRtcSync = 0;
+}
+
+void MelonInstance::resyncDateTimeIfDrifted()
+{
+    // The DS RTC only advances with emulated time, so pausing, backgrounding, fast-forwarding or running below full speed make it diverge from the
+    // device clock. Compare emulated time against wall time and re-read the device clock when they differ by more than a couple of seconds.
+    constexpr double dsFramesPerSecond = 59.8261;
+    constexpr double maxDriftSeconds = 2.0;
+
+    double emulatedSeconds = framesSinceRtcSync / dsFramesPerSecond;
+    double wallSeconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - rtcSyncWallTime).count();
+    if (std::abs(wallSeconds - emulatedSeconds) > maxDriftSeconds)
+        setDateTime();
 }
 
 void MelonInstance::saveRewindState(RewindSaveState* rewindSaveState)

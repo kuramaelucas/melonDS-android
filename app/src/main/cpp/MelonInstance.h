@@ -1,6 +1,7 @@
 #ifndef MELONINSTANCE_H
 #define MELONINSTANCE_H
 
+#include <chrono>
 #include <atomic>
 #include <string>
 #include "Args.h"
@@ -77,6 +78,7 @@ private:
     void updateRenderer();
     void setBatteryLevels();
     void setDateTime();
+    void resyncDateTimeIfDrifted();
     void saveRewindState(RewindSaveState* rewindSaveState);
 
 private:
@@ -100,6 +102,9 @@ private:
     Renderer currentRenderer;
     bool isRenderConfigurationDirty;
     int frame;
+    // Wall-clock reference and emulated frame count since the RTC was last set from the device clock
+    std::chrono::steady_clock::time_point rtcSyncWallTime;
+    u32 framesSinceRtcSync = 0;
 };
 
 }
