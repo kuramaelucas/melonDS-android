@@ -21,8 +21,10 @@ jobs:
           distribution: zulu
           cache: gradle
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # O runner já traz o Android SDK; a ação setup-android falha ao procurar o pacote "tools".
+      # O Gradle baixa NDK e CMake sozinho, desde que as licenças estejam aceitas.
+      - name: Aceitar licenças do Android SDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Criar chave de assinatura temporária
         run: |
