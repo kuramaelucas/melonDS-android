@@ -183,6 +183,10 @@ class SharedPreferencesSettingsRepository(
         return speedMultiplierPreference.toFloat()
     }
 
+    override fun getBackgroundPauseDelaySeconds(): Int {
+        return preferences.getString("background_pause_delay", "10")!!.toInt()
+    }
+
     override fun isRewindEnabled(): Boolean {
         return preferences.getBoolean("enable_rewind", false)
     }

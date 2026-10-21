@@ -21,6 +21,15 @@
             android:entryValues="@array/fast_forward_speed_multiplier_values"
             android:defaultValue="-1" />
 
+    <ListPreference
+            android:key="background_pause_delay"
+            android:title="@string/background_pause_delay"
+            android:summary="%s"
+            app:iconSpaceReserved="false"
+            android:entries="@array/background_pause_delay_options"
+            android:entryValues="@array/background_pause_delay_values"
+            android:defaultValue="10" />
+
     <com.smp.masterswitchpreference.MasterSwitchPreference
             android:key="enable_rewind"
             android:title="@string/rewind"

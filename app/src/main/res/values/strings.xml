@@ -169,6 +169,7 @@
     <string name="category_system_summary">Firmware settings, custom BIOS, JIT</string>
     <string name="theme">Theme</string>
     <string name="fast_forward_max_speed">Fast-forward max speed</string>
+    <string name="background_pause_delay">Pause delay when leaving the app</string>
     <string name="rewind_description">When enabled, a save-state is periodically saved automatically. Whenever you want to go back on your progress by a short amount of time, just open the rewind screen and select the state that you want to resume from.\n\nBe aware that by enabling this feature, you may experience occasional stutters if your device is not powerful enough. A considerable amount of memory is also used depending on how often you want the state to be captured and for how long it should be kept.</string>
     <string name="rewind_save_period">Save period</string>
     <string name="rewind_length">Rewind length</string>
@@ -469,6 +470,15 @@
     <string name="retroachievements_unsynchronized_data_loss_info">If you exit now, this data will be lost!</string>
     <string name="retroachievements_unsynchronized_data_synchronized">All data has been synchronized!</string>
     <string name="retroachievements_unsynchronized_data_exiting">The emulator will now exit.</string>
+
+    <string-array name="background_pause_delay_options">
+        <item>Pause immediately</item>
+        <item>After 5 seconds</item>
+        <item>After 10 seconds</item>
+        <item>After 30 seconds</item>
+        <item>After 1 minute</item>
+        <item>After 5 minutes</item>
+    </string-array>
 
     <string-array name="fast_forward_speed_multiplier_options">
         <item>Unlimited</item>

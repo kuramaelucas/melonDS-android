@@ -1018,7 +1018,7 @@ class EmulatorActivity : AppCompatActivity() {
         enableScreenTimeOut()
         choreographerFrameRenderer.stopRendering()
         emulatorMotionManager.pause()
-        viewModel.pauseEmulator(false)
+        viewModel.pauseEmulatorInBackground()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

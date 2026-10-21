@@ -118,6 +118,7 @@ class EmulatorViewModel @Inject constructor(
 
     private val sessionCoroutineScope = EmulatorSessionCoroutineScope()
     private var raSessionJob: Job? = null
+    private var backgroundPauseJob: Job? = null
 
     private val _emulatorState = MutableStateFlow<EmulatorState>(EmulatorState.Uninitialized)
     val emulatorState = _emulatorState.asStateFlow()
@@ -348,7 +349,26 @@ class EmulatorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Pauses the emulator after the user-configured delay instead of immediately, so that briefly switching to another app doesn't suspend the game. Coming back before the
+     * delay ends cancels the pause (see [resumeEmulator]).
+     */
+    fun pauseEmulatorInBackground() {
+        backgroundPauseJob?.cancel()
+        val delaySeconds = settingsRepository.getBackgroundPauseDelaySeconds()
+        if (delaySeconds <= 0) {
+            pauseEmulator(false)
+            return
+        }
+
+        backgroundPauseJob = sessionCoroutineScope.launch {
+            delay(delaySeconds * 1000L)
+            emulatorManager.pauseEmulator()
+        }
+    }
+
     fun pauseEmulator(showPauseMenu: Boolean) {
+        backgroundPauseJob?.cancel()
         sessionCoroutineScope.launch {
             emulatorManager.pauseEmulator()
             if (showPauseMenu) {
@@ -372,6 +392,7 @@ class EmulatorViewModel @Inject constructor(
     }
 
     fun resumeEmulator() {
+        backgroundPauseJob?.cancel()
         sessionCoroutineScope.launch {
             emulatorManager.resumeEmulator()
         }
