@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
@@ -96,6 +97,8 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+
+private const val AUTO_SAVE_SCREENSHOT_GRACE_MS = 300L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -356,14 +359,33 @@ class EmulatorViewModel @Inject constructor(
     fun pauseEmulatorInBackground() {
         backgroundPauseJob?.cancel()
         val delaySeconds = settingsRepository.getBackgroundPauseDelaySeconds()
-        if (delaySeconds <= 0) {
-            pauseEmulator(false)
-            return
-        }
+        val autoSave = settingsRepository.isAutoSaveOnBackgroundEnabled()
 
         backgroundPauseJob = sessionCoroutineScope.launch {
-            delay(delaySeconds * 1000L)
+            // Save as soon as the app is left: if the system kills the process while it's in the background, the state is already on disk
+            if (autoSave) {
+                autoSaveToQuickSlot()
+            }
+
+            if (delaySeconds > 0) {
+                delay(delaySeconds * 1000L)
+            } else if (autoSave) {
+                // Give the screenshot of the auto-saved state a moment to be captured before pausing
+                delay(AUTO_SAVE_SCREENSHOT_GRACE_MS)
+            }
             emulatorManager.pauseEmulator()
+        }
+    }
+
+    private suspend fun autoSaveToQuickSlot() {
+        val currentState = _emulatorState.value as? EmulatorState.RunningRom ?: return
+
+        // Don't let a quick return to the app cancel the save halfway through writing the file
+        withContext(NonCancellable) {
+            emulatorManager.pauseEmulator()
+            saveRomState(currentState.rom, saveStatesRepository.getRomQuickSaveStateSlot(currentState.rom))
+            // The screenshot is only captured while frames are being rendered
+            emulatorManager.resumeEmulator()
         }
     }
 

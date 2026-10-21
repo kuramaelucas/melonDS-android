@@ -187,6 +187,10 @@ class SharedPreferencesSettingsRepository(
         return preferences.getString("background_pause_delay", "10")!!.toInt()
     }
 
+    override fun isAutoSaveOnBackgroundEnabled(): Boolean {
+        return preferences.getBoolean("auto_save_on_background", false)
+    }
+
     override fun isRewindEnabled(): Boolean {
         return preferences.getBoolean("enable_rewind", false)
     }

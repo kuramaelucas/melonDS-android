@@ -30,6 +30,13 @@
             android:entryValues="@array/background_pause_delay_values"
             android:defaultValue="10" />
 
+    <SwitchPreference
+            android:key="auto_save_on_background"
+            android:title="@string/auto_save_on_background"
+            android:summary="@string/auto_save_on_background_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="false" />
+
     <com.smp.masterswitchpreference.MasterSwitchPreference
             android:key="enable_rewind"
             android:title="@string/rewind"
