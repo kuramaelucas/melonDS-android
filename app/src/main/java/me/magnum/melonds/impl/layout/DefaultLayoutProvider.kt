@@ -111,6 +111,9 @@ class DefaultLayoutProvider(
         val lrButtonsSize = screenUnitsConverter.dpToPixels(50f).toInt()
         val smallButtonsSize = screenUnitsConverter.dpToPixels(40f).toInt()
         val spacing4dp = screenUnitsConverter.dpToPixels(4f).toInt()
+        val dpadSize = (largeButtonsSize * 1.1f).toInt()
+        val dpadInsetX = screenUnitsConverter.dpToPixels(16f).toInt()
+        val dpadInsetY = screenUnitsConverter.dpToPixels(16f).toInt()
 
         var screenWidth = safeWidth
         var screenHeight = (safeWidth / consoleAspectRatio).toInt()
@@ -144,7 +147,7 @@ class DefaultLayoutProvider(
             screensBottom
         }
 
-        val dpadView = Rect(safeLeft, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
+        val dpadView = Rect(safeLeft + dpadInsetX, height - safeBottom - dpadSize - dpadInsetY, dpadSize, dpadSize)
         val buttonsView = Rect(width - safeRight - largeButtonsSize, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
 
         return ScreenLayout(
@@ -178,6 +181,9 @@ class DefaultLayoutProvider(
         val lrButtonsSize = screenUnitsConverter.dpToPixels(50f).toInt()
         val smallButtonsSize = screenUnitsConverter.dpToPixels(40f).toInt()
         val spacing4dp = screenUnitsConverter.dpToPixels(4f).toInt()
+        val dpadSize = (largeButtonsSize * 1.1f).toInt()
+        val dpadInsetX = screenUnitsConverter.dpToPixels(16f).toInt()
+        val dpadInsetY = screenUnitsConverter.dpToPixels(16f).toInt()
 
         val screenComponents = if (singleScreenComponent == null) {
             var topScreenWidth = (safeWidth * 0.66f).roundToInt()
@@ -202,7 +208,7 @@ class DefaultLayoutProvider(
             arrayOf(PositionedLayoutComponent(offsetScreen, singleScreenComponent))
         }
 
-        val dpadView = Rect(safeLeft, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
+        val dpadView = Rect(safeLeft + dpadInsetX, height - safeBottom - dpadSize - dpadInsetY, dpadSize, dpadSize)
         val buttonsView = Rect(width - safeRight - largeButtonsSize, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
 
         return ScreenLayout(
@@ -239,6 +245,9 @@ class DefaultLayoutProvider(
         val lrButtonsSize = screenUnitsConverter.dpToPixels(50f).toInt()
         val smallButtonsSize = screenUnitsConverter.dpToPixels(40f).toInt()
         val spacing4dp = screenUnitsConverter.dpToPixels(4f).toInt()
+        val dpadSize = (largeButtonsSize * 1.1f).toInt()
+        val dpadInsetX = screenUnitsConverter.dpToPixels(16f).toInt()
+        val dpadInsetY = screenUnitsConverter.dpToPixels(16f).toInt()
 
         var screenWidth = safeWidth
         var screenHeight = (safeWidth / consoleAspectRatio).toInt()
@@ -254,7 +263,7 @@ class DefaultLayoutProvider(
 
         val topScreenView = Rect(safeLeft + screenMargin, mainFold.foldBounds.y - screenHeight, screenWidth, screenHeight)
         val bottomScreenView = Rect(safeLeft + screenMargin, mainFold.foldBounds.bottom, screenWidth, screenHeight)
-        val dpadView = Rect(safeLeft, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
+        val dpadView = Rect(safeLeft + dpadInsetX, height - safeBottom - dpadSize - dpadInsetY, dpadSize, dpadSize)
         val buttonsView = Rect(width - safeRight - largeButtonsSize, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
 
         return ScreenLayout(
@@ -292,6 +301,9 @@ class DefaultLayoutProvider(
         val lrButtonsSize = screenUnitsConverter.dpToPixels(50f).toInt()
         val smallButtonsSize = screenUnitsConverter.dpToPixels(40f).toInt()
         val spacing8dp = screenUnitsConverter.dpToPixels(8f).toInt()
+        val dpadSize = (largeButtonsSize * 1.1f).toInt()
+        val dpadInsetX = screenUnitsConverter.dpToPixels(16f).toInt()
+        val dpadInsetY = screenUnitsConverter.dpToPixels(16f).toInt()
 
         // Position to the left of the fold, attached to the fold. As big as the screen allows
         var topScreenWidth = mainFold.foldBounds.x - safeLeft
@@ -318,7 +330,7 @@ class DefaultLayoutProvider(
 
         val topScreenView = Rect(mainFold.foldBounds.x - topScreenWidth, screenYPos, topScreenWidth, topScreenHeight)
         val bottomScreenView = Rect(mainFold.foldBounds.right, screenYPos, bottomScreenWidth, bottomScreenHeight)
-        val dpadView = Rect(safeLeft, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
+        val dpadView = Rect(safeLeft + dpadInsetX, height - safeBottom - dpadSize - dpadInsetY, dpadSize, dpadSize)
         val buttonsView = Rect(width - safeRight - largeButtonsSize, height - safeBottom - largeButtonsSize, largeButtonsSize, largeButtonsSize)
 
         return ScreenLayout(

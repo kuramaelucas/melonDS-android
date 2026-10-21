@@ -96,7 +96,9 @@ abstract class MultiButtonInputHandler(inputListener: IInputListener, enableHapt
         // multiple buttons to be pressed at the same time
         buttonCircles.add(ButtonCircle(pointToLocal(512f + 36f, 256f), radiusSquared, getRightInput()))
         buttonCircles.add(ButtonCircle(pointToLocal(256f, 512f + 36f), radiusSquared, getBottomInput()))
-        buttonCircles.add(ButtonCircle(pointToLocal(256f, -36f), radiusSquared, getTopInput()))
+        // The top button is smaller and further from the others, so its touch area is shifted up and shrunk accordingly
+        val topRadiusSquared = (viewWidth * 232f / 512f).pow(2)
+        buttonCircles.add(ButtonCircle(pointToLocal(256f, -52f), topRadiusSquared, getTopInput()))
         buttonCircles.add(ButtonCircle(pointToLocal(-36f, 256f), radiusSquared, getLeftInput()))
     }
 
