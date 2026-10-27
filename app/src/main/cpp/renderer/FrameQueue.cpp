@@ -1,5 +1,6 @@
 #include "FrameQueue.h"
 #include <Platform.h>
+#include <atomic>
 
 FrameQueue::FrameQueue()
 {
@@ -89,7 +90,11 @@ void FrameQueue::validateRenderFrame(Frame* frame, int requiredWidth, int requir
 
 void FrameQueue::pushRenderedFrame(Frame* frame)
 {
+    // Global across queue instances so that sequences are never reused after the emulator restarts
+    static std::atomic<u64> nextFrameSequence{1};
+
     std::unique_lock lock(frameLock);
+    frame->sequence = nextFrameSequence++;
     presentQueue.push_front(frame);
     presentFrameReadyCondition.notify_one();
 }

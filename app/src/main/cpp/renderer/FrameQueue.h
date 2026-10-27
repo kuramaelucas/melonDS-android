@@ -21,6 +21,8 @@ struct Frame {
     u32 height{};
     EGLSyncKHR renderFence{};
     EGLSyncKHR presentFence{};
+    // Unique, increasing identifier assigned when the frame is pushed for presentation. 0 means never pushed
+    u64 sequence{};
 };
 
 class FrameQueue

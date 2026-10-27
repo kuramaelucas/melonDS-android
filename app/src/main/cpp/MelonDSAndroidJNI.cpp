@@ -260,7 +260,9 @@ JNIEXPORT void JNICALL
 Java_me_magnum_melonds_MelonEmulator_presentFrame(JNIEnv* env, jobject thiz, jlong deadlineNs, jobject renderFrameCallback)
 {
     jclass presentFrameWrapperClass = env->GetObjectClass(renderFrameCallback);
-    jmethodID renderFrameMethodId = env->GetMethodID(presentFrameWrapperClass, "renderFrame", "(ZI)V");
+    jmethodID renderFrameMethodId = env->GetMethodID(presentFrameWrapperClass, "renderFrame", "(ZIZ)V");
+    // Used to tell the frontend if the frame being presented is new, allowing it to skip redundant redraws
+    static u64 lastPresentedFrameSequence = 0;
 
     std::optional<std::chrono::time_point<std::chrono::steady_clock>> deadlineTime;
     if (deadlineNs > 0)
@@ -284,14 +286,18 @@ Java_me_magnum_melonds_MelonEmulator_presentFrame(JNIEnv* env, jobject thiz, jlo
 
     if (presentationFrame != nullptr)
     {
+        bool isNewFrame = presentationFrame->sequence != lastPresentedFrameSequence;
+        lastPresentedFrameSequence = presentationFrame->sequence;
+
         eglWaitSyncKHR(currentDisplay, presentationFrame->renderFence, 0);
-        env->CallVoidMethod(renderFrameCallback, renderFrameMethodId, true, (jint) presentationFrame->frameTexture);
+        env->CallVoidMethod(renderFrameCallback, renderFrameMethodId, true, (jint) presentationFrame->frameTexture, (jboolean) isNewFrame);
         EGLSyncKHR presentFence = eglCreateSyncKHR(currentDisplay, EGL_SYNC_FENCE_KHR, nullptr);
         presentationFrame->presentFence = presentFence;
     }
     else
     {
-        env->CallVoidMethod(renderFrameCallback, renderFrameMethodId, false, 0);
+        lastPresentedFrameSequence = 0;
+        env->CallVoidMethod(renderFrameCallback, renderFrameMethodId, false, 0, (jboolean) false);
     }
 }
 

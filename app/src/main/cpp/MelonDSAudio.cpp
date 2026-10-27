@@ -3,6 +3,7 @@
 #include "mic_blow.h"
 #include "OboeCallback.h"
 #include <oboe/Oboe.h>
+#include <atomic>
 
 #define MIC_BUFFER_SIZE 2048
 
@@ -17,9 +18,9 @@ std::shared_ptr<MicInputOboeCallback> micInputCallback;
 
 MelonDSAndroid::AudioSettings currentAudioSettings;
 std::mutex micBufferMutex;
-int actualMicSource = 0;
-bool isMicInputEnabled = true;
-bool isMicOn = false;
+std::atomic<int> actualMicSource{0};
+std::atomic<bool> isMicInputEnabled{true};
+std::atomic<bool> isMicOn{false};
 int micBufferReadPos = 0;
 
 namespace MelonDSAndroid
@@ -46,9 +47,21 @@ namespace MelonDSAndroid
         }
 
         outputCallback = std::make_shared<OboeCallback>(volume, resetAudioOutputStream);
-        stabilizedOutputCallback = std::make_shared<oboe::StabilizedCallback>(outputCallback.get());
-
         outputCallback->activeInstance = activeInstance;
+
+        std::shared_ptr<oboe::AudioStreamCallback> streamCallback;
+        if (performanceMode == oboe::PerformanceMode::LowLatency)
+        {
+            // StabilizedCallback busy-waits for most of each callback period to keep the CPU clock from dropping. This helps avoid glitches with very small buffers, but
+            // keeps a CPU core busy at all times, so only use it when low latency is explicitly requested
+            stabilizedOutputCallback = std::make_shared<oboe::StabilizedCallback>(outputCallback.get());
+            streamCallback = stabilizedOutputCallback;
+        }
+        else
+        {
+            stabilizedOutputCallback = nullptr;
+            streamCallback = outputCallback;
+        }
 
         oboe::AudioStreamBuilder streamBuilder;
         streamBuilder.setChannelCount(2);
@@ -59,17 +72,20 @@ namespace MelonDSAndroid
         streamBuilder.setPerformanceMode(performanceMode);
         streamBuilder.setSharingMode(oboe::SharingMode::Shared);
         streamBuilder.setUsage(oboe::Usage::Game);
-        streamBuilder.setDataCallback(stabilizedOutputCallback);
-        streamBuilder.setErrorCallback(stabilizedOutputCallback);
+        streamBuilder.setDataCallback(streamCallback);
+        streamBuilder.setErrorCallback(streamCallback);
 
         oboe::Result result = streamBuilder.openStream(audioStream);
-        audioStream->setPerformanceHintEnabled(true);
-        audioStream->setBufferSizeInFrames(std::min(audioStream->getBufferCapacityInFrames(), 2048));
         if (result != oboe::Result::OK) {
             Log(Error, "Failed to init audio stream");
+            audioStream = nullptr;
             outputCallback = nullptr;
             stabilizedOutputCallback = nullptr;
+            return;
         }
+
+        audioStream->setPerformanceHintEnabled(true);
+        audioStream->setBufferSizeInFrames(std::min(audioStream->getBufferCapacityInFrames(), 2048));
     }
 
     void cleanupAudioOutputStream()

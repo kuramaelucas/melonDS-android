@@ -82,23 +82,31 @@ class FrameRenderCoordinator {
 
         private var handler: Handler? = null
         @Volatile private var running = true
+        @Volatile private var latestFrameDeadlineNanos: Long = 0L
         private val renderStatistics = RenderStatistics()
 
         private val frameRenderCallback = object : FrameRenderCallback {
-            override fun renderFrame(isValidFrame: Boolean, frameTextureId: Int) {
+            override fun renderFrame(isValidFrame: Boolean, frameTextureId: Int, isNewFrame: Boolean) {
                 val renderStart = System.nanoTime()
 
                 presentFrameWrapper.apply {
                     this.isValidFrame = isValidFrame
                     this.textureId = frameTextureId
+                    this.isNewFrame = isNewFrame
                 }
 
+                var anySurfaceDrawn = false
                 managedSurfaces.forEach {
-                    it.doFrame(glContext, presentFrameWrapper)
+                    if (it.doFrame(glContext, presentFrameWrapper)) {
+                        anySurfaceDrawn = true
+                    }
                 }
 
-                val renderDuration = System.nanoTime() - renderStart
-                renderStatistics.trackRenderEvent(renderDuration)
+                // Skipped redraws take no time and would make the frame deadline estimation too optimistic
+                if (anySurfaceDrawn) {
+                    val renderDuration = System.nanoTime() - renderStart
+                    renderStatistics.trackRenderEvent(renderDuration)
+                }
             }
         }
 
@@ -106,7 +114,7 @@ class FrameRenderCoordinator {
             handler = object : Handler(looper) {
                 override fun handleMessage(msg: Message) {
                     when (msg.what) {
-                        MSG_RENDER_FRAME -> renderFrame(msg.data.getLong(MSG_RENDER_FRAME_FRAME_DEADLINE_NS))
+                        MSG_RENDER_FRAME -> renderFrame(latestFrameDeadlineNanos)
                         MSG_DESTROY_SURFACES -> destroySurfaces()
                         MSG_STOP -> stopThread()
                         MSG_RENDER_STRATEGY_SWITCH -> handleModeSwitch()
@@ -116,13 +124,9 @@ class FrameRenderCoordinator {
         }
 
         fun requestFrameRender(frameDeadlineNanos: Long?) {
+            latestFrameDeadlineNanos = frameDeadlineNanos ?: 0L
             handler?.removeMessages(MSG_RENDER_FRAME)
-            handler?.obtainMessage(MSG_RENDER_FRAME)?.let {
-                it.data = Bundle().apply {
-                    putLong(MSG_RENDER_FRAME_FRAME_DEADLINE_NS, frameDeadlineNanos ?: 0L)
-                }
-                handler?.sendMessage(it)
-            }
+            handler?.sendEmptyMessage(MSG_RENDER_FRAME)
         }
 
         fun requestSurfaceDestruction() {

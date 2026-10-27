@@ -284,6 +284,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
         handler = Handler(mainLooper)
         lifecycleOwnerProvider.setCurrentLifecycleOwner(this)
         binding = ActivityEmulatorBinding.inflate(layoutInflater)
@@ -432,6 +433,7 @@ class EmulatorActivity : AppCompatActivity() {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.mainScreenBackground.collectLatest {
                     mainScreenRenderer.setBackground(it)
+                    binding.surfaceMain.requestRedraw()
                 }
             }
         }
@@ -839,6 +841,7 @@ class EmulatorActivity : AppCompatActivity() {
             topView?.onTop ?: false,
             bottomView?.onTop ?: false,
         )
+        binding.surfaceMain.requestRedraw()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val touchScreenArea = bottomView?.getRect()?.let {

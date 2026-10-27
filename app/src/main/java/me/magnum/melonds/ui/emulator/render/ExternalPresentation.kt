@@ -104,6 +104,7 @@ class ExternalPresentation(
             topOnTop = topView?.onTop ?: false,
             bottomOnTop = bottomView?.onTop ?: false,
         )
+        surfaceView.requestRedraw()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val touchScreenArea = bottomView?.getRect()?.let {
@@ -144,5 +145,6 @@ class ExternalPresentation(
     fun updateBackground(background: RuntimeBackground) {
         currentBackground = background
         emulatorRenderer.setBackground(background)
+        surfaceView.requestRedraw()
     }
 }
