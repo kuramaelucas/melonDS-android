@@ -121,6 +121,7 @@ class InternalLayoutsRepository(private val context: Context, private val gson: 
                 val deletableLayouts = loadLayouts().map { Deletable(it, false) }
                 layouts.value = buildList {
                     add(Deletable(buildDefaultLayout(), false))
+                    add(Deletable(buildPokemonLayout(), false))
                     addAll(deletableLayouts)
                 }
                 areLayoutsLoaded = true
@@ -170,6 +171,18 @@ class InternalLayoutsRepository(private val context: Context, private val gson: 
         return LayoutConfiguration(
             id = LayoutConfiguration.DEFAULT_ID,
             name = context.getString(R.string.default_layout_name),
+            type = LayoutConfiguration.LayoutType.DEFAULT,
+            orientation = LayoutConfiguration.LayoutOrientation.FOLLOW_SYSTEM,
+            useCustomOpacity = false,
+            opacity = 50,
+            layoutVariants = emptyMap(),
+        )
+    }
+
+    private fun buildPokemonLayout(): LayoutConfiguration {
+        return LayoutConfiguration(
+            id = LayoutConfiguration.POKEMON_ID,
+            name = "Pokemon",
             type = LayoutConfiguration.LayoutType.DEFAULT,
             orientation = LayoutConfiguration.LayoutOrientation.FOLLOW_SYSTEM,
             useCustomOpacity = false,

@@ -339,6 +339,15 @@ private fun PreviewLayoutsScreen() {
                     layoutVariants = emptyMap(),
                 ),
                 LayoutConfiguration(
+                    id = LayoutConfiguration.POKEMON_ID,
+                    name = "Pokemon",
+                    type = LayoutConfiguration.LayoutType.DEFAULT,
+                    orientation = LayoutConfiguration.LayoutOrientation.FOLLOW_SYSTEM,
+                    useCustomOpacity = false,
+                    opacity = 50,
+                    layoutVariants = emptyMap(),
+                ),
+                LayoutConfiguration(
                     id = UUID.randomUUID(),
                     name = "Custom Layout",
                     type = LayoutConfiguration.LayoutType.CUSTOM,

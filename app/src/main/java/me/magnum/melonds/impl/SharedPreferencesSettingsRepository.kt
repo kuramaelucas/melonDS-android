@@ -288,7 +288,7 @@ class SharedPreferencesSettingsRepository(
 
     override fun getVideoRenderer(): Flow<VideoRenderer> {
         return getOrCreatePreferenceSharedFlow("video_renderer") {
-            val videoRendererPreference = preferences.getString("video_renderer", "software")!!
+            val videoRendererPreference = preferences.getString("video_renderer", "opengl")!!
             VideoRenderer.valueOf(videoRendererPreference.uppercase())
         }
     }
@@ -329,7 +329,7 @@ class SharedPreferencesSettingsRepository(
     }
 
     override fun getDSiCameraSource(): DSiCameraSourceType {
-        val dsiCameraSource = preferences.getString("dsi_camera_source", "physical_cameras")!!
+        val dsiCameraSource = preferences.getString("dsi_camera_source", "black_screen")!!
         return DSiCameraSourceType.valueOf(dsiCameraSource.uppercase())
     }
 

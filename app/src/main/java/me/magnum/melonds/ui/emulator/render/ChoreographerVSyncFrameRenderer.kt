@@ -9,12 +9,17 @@ class ChoreographerVSyncFrameRenderer(
     private val frameRenderCoordinator: FrameRenderCoordinator,
 ) : ChoreographerFrameRenderer, Choreographer.VsyncCallback {
 
+    private var choreographer: Choreographer? = null
+
     override fun startRendering() {
-        Choreographer.getInstance().postVsyncCallback(this)
+        val c = Choreographer.getInstance()
+        choreographer = c
+        c.postVsyncCallback(this)
     }
 
     override fun stopRendering() {
-        Choreographer.getInstance().removeVsyncCallback(this)
+        choreographer?.removeVsyncCallback(this)
+        choreographer = null
     }
 
     override fun onVsync(data: Choreographer.FrameData) {
@@ -26,6 +31,6 @@ class ChoreographerVSyncFrameRenderer(
         }
 
         frameRenderCoordinator.renderFrame(frameDeadline)
-        Choreographer.getInstance().postVsyncCallback(this)
+        choreographer?.postVsyncCallback(this)
     }
 }

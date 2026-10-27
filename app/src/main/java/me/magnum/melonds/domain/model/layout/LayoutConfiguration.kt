@@ -14,6 +14,7 @@ data class LayoutConfiguration(
 
     companion object {
         val DEFAULT_ID = UUID(0, 0)
+        val POKEMON_ID = UUID(0, 1)
 
         fun newCustom(): LayoutConfiguration {
             return LayoutConfiguration(

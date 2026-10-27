@@ -3,6 +3,10 @@
 #include "Platform.h"
 #include "SPU.h"
 
+#if defined(__ARM_NEON) || defined(__aarch64__)
+#include <arm_neon.h>
+#endif
+
 using namespace melonDS;
 
 #define INTERNAL_FRAME_RATE 59.8260982880808f
@@ -40,7 +44,23 @@ OboeCallback::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     if (_volume < 256)
     {
         s16* samples = (s16*) audioData;
-        for (int i = 0; i < num_in * 2; i++)
+        int totalSamples = num_in * 2;
+        int i = 0;
+
+#if defined(__ARM_NEON) || defined(__aarch64__)
+        int16x8_t vol_vec = vdupq_n_s16((s16)_volume);
+        for (; i <= totalSamples - 8; i += 8)
+        {
+            int16x8_t smp = vld1q_s16(&samples[i]);
+            int32x4_t low = vmull_s16(vget_low_s16(smp), vget_low_s16(vol_vec));
+            int32x4_t high = vmull_s16(vget_high_s16(smp), vget_high_s16(vol_vec));
+            int16x4_t res_low = vshrn_n_s32(low, 8);
+            int16x4_t res_high = vshrn_n_s32(high, 8);
+            vst1q_s16(&samples[i], vcombine_s16(res_low, res_high));
+        }
+#endif
+
+        for (; i < totalSamples; i++)
             samples[i] = ((s32) samples[i] * _volume) >> 8;
     }
 

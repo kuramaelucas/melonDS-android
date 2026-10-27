@@ -10,6 +10,7 @@ import me.magnum.melonds.domain.model.Point
 
 class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(inputListener) {
     private val touchPoint: Point = Point()
+    private val pointerCoordinates: PointerCoords = PointerCoords()
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -32,7 +33,6 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
     private fun normalizeTouchCoordinates(event: MotionEvent, viewWidth: Int, viewHeight: Int): Point {
         var averageTouchX = 0f
         var averageTouchY = 0f
-        val pointerCoordinates = PointerCoords()
 
         // Average out touch positions. Even though the DS has a resistive touch screen, some games rely on the nuances
         // of this technology for some mechanics. Averaging out the coordinates of the touch position allows us to

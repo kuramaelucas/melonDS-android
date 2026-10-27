@@ -3,6 +3,7 @@ package me.magnum.melonds.impl
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -95,7 +96,18 @@ class FileSystemRomsRepository(
     }
 
     override suspend fun getRomAtPath(path: String): Rom? {
-        return getRoms().first().find { rom ->
+        val allRoms = getRoms().first()
+
+        allRoms.find { rom -> rom.uri.toString() == path }?.let {
+            return it
+        }
+
+        val parsedUri = try { path.toUri() } catch (_: Exception) { null }
+        if (parsedUri != null && (parsedUri.scheme == "content" || parsedUri.scheme == "file")) {
+            getRomAtUri(parsedUri)?.let { return it }
+        }
+
+        return allRoms.find { rom ->
             val romPath = FileUtils.getAbsolutePathFromSAFUri(context, rom.uri)
             romPath == path
         }

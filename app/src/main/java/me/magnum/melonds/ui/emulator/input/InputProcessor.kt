@@ -53,39 +53,40 @@ class InputProcessor(private val controllerConfiguration: ControllerConfiguratio
 
     override fun onMotionEvent(motionEvent: MotionEvent): Boolean {
         if (motionEvent.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK)) {
-            val deviceAxis = axisStates.filterKeys { it.deviceId == null || it.deviceId == motionEvent.deviceId }
-            deviceAxis.forEach {
-                val axis = it.key
-                val axisState = it.value
+            val eventDeviceId = motionEvent.deviceId
+            var handled = false
+            for ((axis, axisState) in axisStates) {
+                if (axis.deviceId == null || axis.deviceId == eventDeviceId) {
+                    handled = true
+                    val newValue = motionEvent.getAxisValue(axis.axisCode)
+                    val clampedValue = when (axis.direction) {
+                        InputConfig.Assignment.Axis.Direction.POSITIVE -> newValue.coerceAtLeast(0f)
+                        InputConfig.Assignment.Axis.Direction.NEGATIVE -> newValue.coerceAtMost(0f)
+                    }
 
-                val newValue = motionEvent.getAxisValue(axis.axisCode)
-                val clampedValue = when (axis.direction) {
-                    InputConfig.Assignment.Axis.Direction.POSITIVE -> newValue.coerceAtLeast(0f)
-                    InputConfig.Assignment.Axis.Direction.NEGATIVE -> newValue.coerceAtMost(0f)
-                }
-
-                if (axisState.shouldToggleFor(newValue = clampedValue)) {
-                    controllerConfiguration.axisToInput(axis.axisCode, axis.direction)?.let { input ->
-                        if (axisState.active) {
-                            axisState.active = false
-                            if (input.isSystemInput) {
-                                systemInputListener.onKeyReleased(input)
+                    if (axisState.shouldToggleFor(newValue = clampedValue)) {
+                        controllerConfiguration.axisToInput(axis.axisCode, axis.direction)?.let { input ->
+                            if (axisState.active) {
+                                axisState.active = false
+                                if (input.isSystemInput) {
+                                    systemInputListener.onKeyReleased(input)
+                                } else {
+                                    frontendInputListener.onKeyReleased(input)
+                                }
                             } else {
-                                frontendInputListener.onKeyReleased(input)
-                            }
-                        } else {
-                            axisState.active = true
-                            if (input.isSystemInput) {
-                                systemInputListener.onKeyPress(input)
-                            } else {
-                                frontendInputListener.onKeyPress(input)
+                                axisState.active = true
+                                if (input.isSystemInput) {
+                                    systemInputListener.onKeyPress(input)
+                                } else {
+                                    frontendInputListener.onKeyPress(input)
+                                }
                             }
                         }
                     }
+                    axisState.value = clampedValue
                 }
-                axisState.value = clampedValue
             }
-            return deviceAxis.isNotEmpty()
+            return handled
         } else {
             return false
         }

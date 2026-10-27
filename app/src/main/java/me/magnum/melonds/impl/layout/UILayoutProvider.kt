@@ -69,6 +69,10 @@ class UILayoutProvider(private val defaultLayoutProvider: DefaultLayoutProvider)
     }
 
     private fun getOptimalLayoutForVariant(layoutConfiguration: LayoutConfiguration, variant: UILayoutVariant): UILayout {
+        if (layoutConfiguration.id == LayoutConfiguration.POKEMON_ID) {
+            return defaultLayoutProvider.buildPokemonLayout(variant)
+        }
+
         val exactLayoutMatch = layoutConfiguration.layoutVariants[variant]
         if (exactLayoutMatch != null) {
             return populateLayoutIfRequired(exactLayoutMatch, variant)
