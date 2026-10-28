@@ -19,6 +19,7 @@
 #ifndef REWINDMANAGER_H
 #define REWINDMANAGER_H
 
+#include <chrono>
 #include <list>
 #include "types.h"
 
@@ -64,6 +65,9 @@ private:
     int RewindCapturingIntervalSeconds;
     u32 SavestateBufferSize;
     u32 ScreenshotBufferSize;
+    // Real time of the last capture. Used to limit how often states are captured while fast-forwarding
+    std::chrono::steady_clock::time_point LastCaptureTime;
+    bool HasCapturedState = false;
 };
 
 }

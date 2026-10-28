@@ -62,7 +62,25 @@ bool RewindManager::ShouldCaptureState(int currentFrame)
         return false;
     }
 
-    return currentFrame % (RewindCapturingIntervalSeconds * FRAMES_PER_SECOND) == 0;
+    if (currentFrame % (RewindCapturingIntervalSeconds * FRAMES_PER_SECOND) != 0)
+    {
+        return false;
+    }
+
+    // While fast-forwarding, the capture interval (measured in emulated frames) elapses much faster than real time, which would cause expensive captures to happen many
+    // times per second exactly when performance matters the most. Limit captures to roughly one per interval of real time. A small tolerance is used so that captures
+    // are not skipped when running at normal speed
+    auto now = std::chrono::steady_clock::now();
+    auto minimumInterval = std::chrono::duration<double>(RewindCapturingIntervalSeconds * 0.9);
+    if (HasCapturedState && now - LastCaptureTime < minimumInterval)
+    {
+        return false;
+    }
+
+    // The caller always captures a state when this returns true
+    LastCaptureTime = now;
+    HasCapturedState = true;
+    return true;
 }
 
 RewindSaveState* RewindManager::GetNextRewindSaveState(int currentFrame)
@@ -133,6 +151,7 @@ void RewindManager::Reset()
     }
 
     RewindWindow.clear();
+    HasCapturedState = false;
 }
 
 void RewindManager::DeleteRewindSaveState(RewindSaveState state)
