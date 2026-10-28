@@ -67,6 +67,7 @@ import me.magnum.melonds.domain.model.rewind.RewindWindowPosition
 import me.magnum.melonds.domain.model.rom.Rom
 import me.magnum.melonds.domain.model.rom.config.RomGbaSlotConfig
 import me.magnum.melonds.domain.model.ui.Orientation
+import me.magnum.melonds.domain.services.PowerSavingMonitor
 import me.magnum.melonds.extensions.insetsControllerCompat
 import me.magnum.melonds.extensions.setLayoutOrientation
 import me.magnum.melonds.impl.emulator.LifecycleOwnerProvider
@@ -197,6 +198,7 @@ class EmulatorActivity : AppCompatActivity() {
     private lateinit var mainScreenRenderer: DSRenderer
     private lateinit var melonTouchHandler: MelonTouchHandler
     private lateinit var nativeInputListener: INativeInputListener
+    private var lastNotifiedPowerSavingReason: PowerSavingMonitor.Reason? = null
     private val frontendInputHandler = object : FrontendInputHandler() {
         var fastForwardEnabled = false
             private set
@@ -450,6 +452,13 @@ class EmulatorActivity : AppCompatActivity() {
                 viewModel.mainScreenBackground.collectLatest {
                     mainScreenRenderer.setBackground(it)
                     binding.surfaceMain.requestRedraw()
+                }
+            }
+        }
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.powerSavingReason.collect {
+                    notifyPowerSavingStateIfChanged(it)
                 }
             }
         }
@@ -751,6 +760,24 @@ class EmulatorActivity : AppCompatActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         setupFullscreen()
+        if (hasFocus) {
+            // The game mode may have been changed in the system's game overlay, which takes focus from the emulator while open
+            viewModel.refreshPowerSavingState()
+        }
+    }
+
+    private fun notifyPowerSavingStateIfChanged(reason: PowerSavingMonitor.Reason?) {
+        if (reason == lastNotifiedPowerSavingReason) {
+            return
+        }
+
+        val message = when (reason) {
+            PowerSavingMonitor.Reason.THERMAL -> R.string.power_saving_enabled_thermal
+            PowerSavingMonitor.Reason.BATTERY_GAME_MODE -> R.string.power_saving_enabled_battery_game_mode
+            null -> R.string.power_saving_disabled
+        }
+        lastNotifiedPowerSavingReason = reason
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun setupFullscreen() {

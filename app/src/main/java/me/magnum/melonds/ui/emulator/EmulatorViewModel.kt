@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -70,6 +71,7 @@ import me.magnum.melonds.domain.repositories.RomsRepository
 import me.magnum.melonds.domain.repositories.SaveStatesRepository
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.EmulatorManager
+import me.magnum.melonds.domain.services.PowerSavingMonitor
 import me.magnum.melonds.impl.emulator.EmulatorSession
 import me.magnum.melonds.impl.layout.UILayoutProvider
 import me.magnum.melonds.ui.emulator.component.RetroAchievementsSubmissionHandler
@@ -114,6 +116,7 @@ class EmulatorViewModel @Inject constructor(
     private val emulatorManager: EmulatorManager,
     private val emulatorSession: EmulatorSession,
     private val retroAchievementsSubmissionHandler: RetroAchievementsSubmissionHandler,
+    private val powerSavingMonitor: PowerSavingMonitor,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -161,7 +164,16 @@ class EmulatorViewModel @Inject constructor(
     private val _uiEvent = EventSharedFlow<EmulatorUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    val powerSavingReason = powerSavingMonitor.powerSavingReason
+
     init {
+        viewModelScope.launch {
+            // Re-apply the emulator configuration whenever power saving starts or stops, since it affects the internal resolution and fast-forward speed
+            powerSavingMonitor.powerSavingReason.drop(1).collect {
+                onSettingsChanged()
+            }
+        }
+
         viewModelScope.launch {
             _layout.filterNotNull().collect {
                 uiLayoutProvider.setCurrentLayoutConfiguration(it)
@@ -782,6 +794,10 @@ class EmulatorViewModel @Inject constructor(
 
     fun isSustainedPerformanceModeEnabled(): Boolean {
         return settingsRepository.isSustainedPerformanceModeEnabled()
+    }
+
+    fun refreshPowerSavingState() {
+        powerSavingMonitor.refresh()
     }
 
     fun getFastForwardMode(): FastForwardMode {

@@ -53,6 +53,7 @@ import me.magnum.melonds.domain.model.layout.LayoutConfiguration
 import me.magnum.melonds.domain.model.render.RenderStrategy
 import me.magnum.melonds.domain.model.rom.Rom
 import me.magnum.melonds.domain.repositories.SettingsRepository
+import me.magnum.melonds.domain.services.PowerSavingMonitor
 import me.magnum.melonds.impl.dtos.input.ControllerConfigurationDto
 import me.magnum.melonds.impl.input.ControllerConfigurationFactory
 import me.magnum.melonds.ui.Theme
@@ -67,12 +68,15 @@ class SharedPreferencesSettingsRepository(
     private val controllerConfigurationFactory: ControllerConfigurationFactory,
     private val json: Json,
     private val uriHandler: UriHandler,
+    private val powerSavingMonitor: PowerSavingMonitor,
     preferencesCoroutineScope: CoroutineScope,
 ) : SettingsRepository, OnSharedPreferenceChangeListener {
 
     companion object {
         private const val TAG = "SPSettingsRepository"
         private const val CONTROLLER_CONFIG_FILE = "controller_config.json"
+        private const val POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER = 2f
+        private const val POWER_SAVING_INTERNAL_RESOLUTION = 1
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -97,15 +101,27 @@ class SharedPreferencesSettingsRepository(
         setDefaultThemeIfRequired()
         setDefaultMacAddressIfRequired()
 
+        val effectiveInternalResolutionScaling = combine(getVideoInternalResolutionScaling(), powerSavingMonitor.powerSavingReason) { resolutionScaling, powerSavingReason ->
+            applyPowerSavingToInternalResolution(resolutionScaling, powerSavingReason)
+        }
+
         renderConfigurationFlow = combine(
             getVideoRenderer(),
             getVideoFiltering(),
             isThreadedRenderingEnabled(),
             getRenderStrategy(),
-            getVideoInternalResolutionScaling(),
+            effectiveInternalResolutionScaling,
         ) { renderer, filtering, threadedRenderingEnabled, renderStrategy, resolutionScaling ->
             RendererConfiguration(renderer, filtering, threadedRenderingEnabled, renderStrategy, resolutionScaling)
         }.conflate().shareIn(preferencesCoroutineScope, SharingStarted.Lazily, replay = 1)
+    }
+
+    private fun applyPowerSavingToInternalResolution(resolutionScaling: Int, powerSavingReason: PowerSavingMonitor.Reason?): Int {
+        return if (powerSavingReason != null) {
+            resolutionScaling.coerceAtMost(POWER_SAVING_INTERNAL_RESOLUTION)
+        } else {
+            resolutionScaling
+        }
     }
 
     private fun setDefaultThemeIfRequired() {
@@ -170,7 +186,16 @@ class SharedPreferencesSettingsRepository(
             audioLatency = getAudioLatency(),
             micSource = getMicSource(),
             firmwareConfiguration = getFirmwareConfiguration(),
-            rendererConfiguration = renderConfigurationFlow.first(),
+            // Read the resolution directly instead of relying only on the flow, which may not have been updated yet if the power saving state has just changed
+            rendererConfiguration = renderConfigurationFlow.first().let {
+                RendererConfiguration(
+                    renderer = it.renderer,
+                    videoFiltering = it.videoFiltering,
+                    threadedRendering = it.threadedRendering,
+                    renderStrategy = it.renderStrategy,
+                    internalResolutionScaling = applyPowerSavingToInternalResolution(getVideoInternalResolutionScaling().first(), powerSavingMonitor.powerSavingReason.value),
+                )
+            },
         )
     }
 
@@ -180,8 +205,17 @@ class SharedPreferencesSettingsRepository(
     }
 
     override fun getFastForwardSpeedMultiplier(): Float {
-        val speedMultiplierPreference = preferences.getString("fast_forward_speed_multiplier", "-1")!!
-        return speedMultiplierPreference.toFloat()
+        val speedMultiplier = preferences.getString("fast_forward_speed_multiplier", "-1")!!.toFloat()
+        if (powerSavingMonitor.powerSavingReason.value == null) {
+            return speedMultiplier
+        }
+
+        // Values <= 0 mean unlimited speed
+        return if (speedMultiplier <= 0 || speedMultiplier > POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER) {
+            POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER
+        } else {
+            speedMultiplier
+        }
     }
 
     override fun getFastForwardMode(): FastForwardMode {

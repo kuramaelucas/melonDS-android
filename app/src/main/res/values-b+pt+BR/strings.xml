@@ -129,6 +129,9 @@
     <string name="theme">Tema</string>
     <string name="fast_forward_max_speed">Velocidade máxima de avanço rápido</string>
     <string name="fast_forward_mode">Comportamento do botão de avanço rápido</string>
+    <string name="power_saving_enabled_thermal">O aparelho está superaquecendo. Resolução interna reduzida e avanço rápido limitado a 2x até esfriar</string>
+    <string name="power_saving_enabled_battery_game_mode">Modo de jogo bateria ativado. Resolução interna reduzida e avanço rápido limitado a 2x</string>
+    <string name="power_saving_disabled">Economia de energia desativada. Configurações de vídeo e avanço rápido restauradas</string>
     <string name="rewind_description">Quando ativado, um estado de salvamento é periodicamente salvo automaticamente. Sempre que quiser voltar em seu progresso por um curto período de tempo, basta abrir a tela de rebobinamento e selecionar o estado a partir do qual deseja retomar.\n\nEsteja ciente de que, ao ativar esse recurso, você pode experimentar interrupções ocasionais se o seu dispositivo não é poderoso o suficiente. Uma quantidade considerável de memória também é usada, dependendo de quantas vezes você deseja que o estado seja capturado e por quanto tempo ele deve ser mantido.</string>
     <string name="rewind_save_period">Período de salvamento</string>
     <string name="rewind_length">Duração do rebobinamento</string>
