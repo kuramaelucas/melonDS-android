@@ -100,6 +100,11 @@
         <item>system</item>
     </string-array>
 
+    <string-array name="fast_forward_mode_values">
+        <item>toggle</item>
+        <item>hold</item>
+    </string-array>
+
     <string-array name="fast_forward_speed_multiplier_values">
         <item>-1</item>
         <item>1.5</item>

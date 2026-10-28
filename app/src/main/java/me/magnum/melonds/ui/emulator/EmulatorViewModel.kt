@@ -42,6 +42,7 @@ import me.magnum.melonds.common.romprocessors.RomFileProcessorFactory
 import me.magnum.melonds.common.runtime.ScreenshotFrameBufferProvider
 import me.magnum.melonds.domain.model.Cheat
 import me.magnum.melonds.domain.model.ConsoleType
+import me.magnum.melonds.domain.model.FastForwardMode
 import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.RomInfo
 import me.magnum.melonds.domain.model.RuntimeBackground
@@ -781,6 +782,10 @@ class EmulatorViewModel @Inject constructor(
 
     fun isSustainedPerformanceModeEnabled(): Boolean {
         return settingsRepository.isSustainedPerformanceModeEnabled()
+    }
+
+    fun getFastForwardMode(): FastForwardMode {
+        return settingsRepository.getFastForwardMode()
     }
 
     fun getFpsCounterPosition(): FpsCounterPosition {

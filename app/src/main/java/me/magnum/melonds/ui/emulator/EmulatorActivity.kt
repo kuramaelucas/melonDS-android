@@ -55,6 +55,8 @@ import me.magnum.melonds.common.PermissionHandler
 import me.magnum.melonds.databinding.ActivityEmulatorBinding
 import me.magnum.melonds.domain.model.ConsoleType
 import me.magnum.melonds.domain.model.ControllerConfiguration
+import me.magnum.melonds.domain.model.FastForwardMode
+import me.magnum.melonds.domain.model.Input
 import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.Rect
 import me.magnum.melonds.domain.model.SaveStateSlot
@@ -211,7 +213,21 @@ class EmulatorActivity : AppCompatActivity() {
         }
 
         override fun onFastForwardPressed() {
-            fastForwardEnabled = !fastForwardEnabled
+            val newState = when (viewModel.getFastForwardMode()) {
+                FastForwardMode.TOGGLE -> !fastForwardEnabled
+                FastForwardMode.HOLD -> true
+            }
+            setFastForwardEnabled(newState)
+        }
+
+        override fun onKeyReleased(key: Input) {
+            if (key == Input.FAST_FORWARD && fastForwardEnabled && viewModel.getFastForwardMode() == FastForwardMode.HOLD) {
+                setFastForwardEnabled(false)
+            }
+        }
+
+        private fun setFastForwardEnabled(enabled: Boolean) {
+            fastForwardEnabled = enabled
             binding.viewLayoutControls.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
             presentation?.layoutView?.setLayoutComponentToggleState(LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE, fastForwardEnabled)
             MelonEmulator.setFastForwardEnabled(fastForwardEnabled)

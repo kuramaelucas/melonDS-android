@@ -21,6 +21,15 @@
             android:entryValues="@array/fast_forward_speed_multiplier_values"
             android:defaultValue="-1" />
 
+    <ListPreference
+            android:key="fast_forward_mode"
+            android:title="@string/fast_forward_mode"
+            android:summary="%s"
+            app:iconSpaceReserved="false"
+            android:entries="@array/fast_forward_mode_options"
+            android:entryValues="@array/fast_forward_mode_values"
+            android:defaultValue="toggle" />
+
     <com.smp.masterswitchpreference.MasterSwitchPreference
             android:key="enable_rewind"
             android:title="@string/rewind"

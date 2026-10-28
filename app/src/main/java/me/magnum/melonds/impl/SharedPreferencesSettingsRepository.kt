@@ -34,6 +34,7 @@ import me.magnum.melonds.domain.model.ConsoleType
 import me.magnum.melonds.domain.model.ControllerConfiguration
 import me.magnum.melonds.domain.model.EmulatorConfiguration
 import me.magnum.melonds.domain.model.FirmwareConfiguration
+import me.magnum.melonds.domain.model.FastForwardMode
 import me.magnum.melonds.domain.model.FpsCounterPosition
 import me.magnum.melonds.domain.model.MacAddress
 import me.magnum.melonds.domain.model.MicSource
@@ -181,6 +182,11 @@ class SharedPreferencesSettingsRepository(
     override fun getFastForwardSpeedMultiplier(): Float {
         val speedMultiplierPreference = preferences.getString("fast_forward_speed_multiplier", "-1")!!
         return speedMultiplierPreference.toFloat()
+    }
+
+    override fun getFastForwardMode(): FastForwardMode {
+        val fastForwardModePreference = preferences.getString("fast_forward_mode", "toggle")!!
+        return enumValueOfIgnoreCase(fastForwardModePreference)
     }
 
     override fun isRewindEnabled(): Boolean {
