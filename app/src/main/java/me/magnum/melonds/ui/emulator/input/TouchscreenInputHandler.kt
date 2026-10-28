@@ -14,7 +14,7 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        when (event.action) {
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 inputListener.onKeyPress(Input.TOUCHSCREEN)
                 inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height))
@@ -22,7 +22,8 @@ class TouchscreenInputHandler(inputListener: IInputListener) : BaseInputHandler(
             MotionEvent.ACTION_MOVE -> {
                 inputListener.onTouch(normalizeTouchCoordinates(event, v.width, v.height))
             }
-            MotionEvent.ACTION_UP -> {
+            // Treat cancellation as a release so that the DS touchscreen doesn't remain pressed
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 inputListener.onKeyReleased(Input.TOUCHSCREEN)
                 onScreenRelease()
             }
