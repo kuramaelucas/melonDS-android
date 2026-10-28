@@ -654,6 +654,16 @@
     <string name="multiplayer_host_failed">Failed to host the multiplayer session. Another session may already be running on this device.</string>
     <string name="multiplayer_join_failed">Failed to connect to the host. Check the IP address and that both devices are on the same Wi-Fi network.</string>
     <string name="multiplayer_join_address_missing">No host address set for multiplayer. Playing without multiplayer.</string>
+    <string name="multiplayer_start_hosting">Start hosting</string>
+    <string name="multiplayer_stop_hosting">Stop hosting</string>
+    <string name="multiplayer_connect">Connect</string>
+    <string name="multiplayer_disconnect">Disconnect</string>
+    <string name="multiplayer_status">Status</string>
+    <string name="multiplayer_status_not_connected">Not connected</string>
+    <string name="multiplayer_status_waiting_for_player">Hosting. Waiting for another player to connect…</string>
+    <string name="multiplayer_status_connected_to">Connected to %1$s (%2$d ms)</string>
+    <string name="multiplayer_status_connected_to_host">Connected to the host</string>
+    <string name="multiplayer_status_player_connected">Connected: %1$s (%2$d ms)</string>
     <string name="multiplayer_host_address">Host IP address</string>
     <string name="multiplayer_host_address_hint">Enter the IP address shown on the host device. Both devices must be on the same Wi-Fi network.</string>
     <string name="multiplayer_local_address">This device\'s IP address</string>

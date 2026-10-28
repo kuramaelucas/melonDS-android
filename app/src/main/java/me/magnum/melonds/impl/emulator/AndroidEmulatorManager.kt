@@ -221,12 +221,16 @@ class AndroidEmulatorManager(
 
     override fun stopEmulator() {
         MelonEmulator.stopEmulation()
-        MelonEmulator.multiplayerStop()
         cameraManager.stopCurrentCameraSource()
         messageQueue.stop()
     }
 
     private fun startMultiplayerSession() {
+        // A session may have been started manually from the settings screen
+        if (MelonEmulator.multiplayerIsActive()) {
+            return
+        }
+
         val preferences = PreferenceManager.getDefaultSharedPreferences(context)
         val playerName = preferences.getString("multiplayer_player_name", null)?.takeIf { it.isNotBlank() } ?: "Player"
 

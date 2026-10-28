@@ -103,6 +103,14 @@ object MelonEmulator {
 
     external fun multiplayerStop()
 
+    external fun multiplayerIsActive(): Boolean
+
+    /**
+     * Returns the players in the current session. Each entry has the format "name|status|ping|is local player".
+     * Status: 1 = client, 2 = host, 3 = connecting, 4 = disconnected.
+     */
+    external fun multiplayerGetPlayers(): Array<String>
+
     external fun multiplayerStartDiscovery(): Boolean
 
     /**

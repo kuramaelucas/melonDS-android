@@ -32,6 +32,17 @@
             android:title="@string/multiplayer_search_sessions"
             app:iconSpaceReserved="false" />
 
+    <Preference
+            android:key="multiplayer_connect"
+            app:iconSpaceReserved="false" />
+
+    <!-- Only used to display the current connection status -->
+    <Preference
+            android:key="multiplayer_status"
+            android:title="@string/multiplayer_status"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
     <!-- Only used to display this device's IP address -->
     <Preference
             android:key="multiplayer_local_address"

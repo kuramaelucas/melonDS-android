@@ -5,6 +5,8 @@
 #include <sstream>
 #include <stdlib.h>
 #include <pthread.h>
+#include <mutex>
+#include <thread>
 #include <unistd.h>
 #include <cstdlib>
 #include <time.h>
@@ -43,6 +45,48 @@ pthread_mutex_t emuThreadMutex;
 pthread_cond_t emuThreadCond;
 
 bool started = false;
+
+// While no game is running, a background thread keeps the multiplayer session alive (accepting
+// connections, advertising the session and receiving player updates). While a game is running,
+// the emulator thread takes over and the pump stays idle.
+std::mutex multiplayerMutex;
+std::thread multiplayerPumpThread;
+bool multiplayerPumpRunning = false;
+bool multiplayerPumpActive = false;
+
+static void startMultiplayerPump()
+{
+    std::lock_guard<std::mutex> lock(multiplayerMutex);
+    multiplayerPumpActive = !started;
+    if (multiplayerPumpRunning)
+        return;
+
+    multiplayerPumpRunning = true;
+    multiplayerPumpThread = std::thread([]() {
+        for (;;)
+        {
+            {
+                std::lock_guard<std::mutex> innerLock(multiplayerMutex);
+                if (!multiplayerPumpRunning)
+                    return;
+                if (multiplayerPumpActive && melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+                    melonDS::MPInterface::Get().Process();
+            }
+            usleep(8000);
+        }
+    });
+}
+
+static void stopMultiplayerPump()
+{
+    {
+        std::lock_guard<std::mutex> lock(multiplayerMutex);
+        if (!multiplayerPumpRunning)
+            return;
+        multiplayerPumpRunning = false;
+    }
+    multiplayerPumpThread.join();
+}
 bool stop;
 bool paused;
 std::atomic_bool isThreadReallyPaused = false;
@@ -249,6 +293,12 @@ Java_me_magnum_melonds_MelonEmulator_startEmulation(JNIEnv* env, jobject thiz)
     limitFps = true;
     targetFps = 60;
     isFastForwardEnabled = false;
+
+    {
+        // Waits for any in-flight pump iteration, so that only the emulator thread drives the session from now on
+        std::lock_guard<std::mutex> lock(multiplayerMutex);
+        multiplayerPumpActive = false;
+    }
 
     pthread_mutex_init(&emuThreadMutex, NULL);
     pthread_cond_init(&emuThreadCond, NULL);
@@ -459,22 +509,46 @@ Java_me_magnum_melonds_MelonEmulator_getRewindWindow(JNIEnv* env, jobject thiz) 
     return rewindWindow;
 }
 
+static bool multiplayerSessionActive = false;
+
+static void shutdownMultiplayerSession()
+{
+    stopMultiplayerPump();
+    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+    {
+        static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).EndSession();
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    }
+    multiplayerSessionActive = false;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerStartHost(JNIEnv* env, jobject thiz, jstring playerName)
 {
+    shutdownMultiplayerSession();
+
     melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
     const char* name = env->GetStringUTFChars(playerName, nullptr);
     bool result = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).StartHost(name, 2);
     env->ReleaseStringUTFChars(playerName, name);
 
-    if (!result)
+    if (result)
+    {
+        multiplayerSessionActive = true;
+        startMultiplayerPump();
+    }
+    else
+    {
         melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    }
     return result;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerJoin(JNIEnv* env, jobject thiz, jstring playerName, jstring hostAddress)
 {
+    shutdownMultiplayerSession();
+
     melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
     const char* name = env->GetStringUTFChars(playerName, nullptr);
     const char* host = env->GetStringUTFChars(hostAddress, nullptr);
@@ -482,17 +556,59 @@ Java_me_magnum_melonds_MelonEmulator_multiplayerJoin(JNIEnv* env, jobject thiz, 
     env->ReleaseStringUTFChars(playerName, name);
     env->ReleaseStringUTFChars(hostAddress, host);
 
-    if (!result)
+    if (result)
+    {
+        multiplayerSessionActive = true;
+        startMultiplayerPump();
+    }
+    else
+    {
         melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    }
     return result;
 }
+
+JNIEXPORT jboolean JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerIsActive(JNIEnv* env, jobject thiz)
+{
+    return multiplayerSessionActive;
+}
+
+// Each entry has the format "<name>|<status>|<ping>|<is local player>". Status: 1=client, 2=host, 3=connecting, 4=disconnected
+JNIEXPORT jobjectArray JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerGetPlayers(JNIEnv* env, jobject thiz)
+{
+    jclass stringClass = env->FindClass("java/lang/String");
+    if (!multiplayerSessionActive || melonDS::MPInterface::GetType() != melonDS::MPInterface_LAN)
+        return env->NewObjectArray(0, stringClass, nullptr);
+
+    auto players = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).GetPlayerList();
+    jobjectArray result = env->NewObjectArray((jsize) players.size(), stringClass, nullptr);
+    jsize index = 0;
+    for (const auto& player : players)
+    {
+        char name[33];
+        strncpy(name, player.Name, 32);
+        name[32] = '\0';
+
+        char entry[96];
+        snprintf(entry, sizeof(entry), "%s|%d|%u|%d", name, (int) player.Status, player.Ping, player.IsLocalPlayer ? 1 : 0);
+        jstring entryString = env->NewStringUTF(entry);
+        env->SetObjectArrayElement(result, index++, entryString);
+        env->DeleteLocalRef(entryString);
+    }
+    return result;
+}
+
 
 JNIEXPORT jboolean JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerStartDiscovery(JNIEnv* env, jobject thiz)
 {
     // Never interfere with a session that is already running
-    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+    if (multiplayerSessionActive)
         return JNI_FALSE;
+    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
 
     melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
     bool result = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).StartDiscovery();
@@ -506,7 +622,7 @@ JNIEXPORT jobjectArray JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerPollSessions(JNIEnv* env, jobject thiz)
 {
     jclass stringClass = env->FindClass("java/lang/String");
-    if (melonDS::MPInterface::GetType() != melonDS::MPInterface_LAN)
+    if (multiplayerSessionActive || melonDS::MPInterface::GetType() != melonDS::MPInterface_LAN)
         return env->NewObjectArray(0, stringClass, nullptr);
 
     auto& lan = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get());
@@ -531,7 +647,7 @@ Java_me_magnum_melonds_MelonEmulator_multiplayerPollSessions(JNIEnv* env, jobjec
 JNIEXPORT void JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerStopDiscovery(JNIEnv* env, jobject thiz)
 {
-    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+    if (!multiplayerSessionActive && melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
     {
         static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).EndDiscovery();
         melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
@@ -541,11 +657,7 @@ Java_me_magnum_melonds_MelonEmulator_multiplayerStopDiscovery(JNIEnv* env, jobje
 JNIEXPORT void JNICALL
 Java_me_magnum_melonds_MelonEmulator_multiplayerStop(JNIEnv* env, jobject thiz)
 {
-    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
-    {
-        static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).EndSession();
-        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
-    }
+    shutdownMultiplayerSession();
 }
 
 JNIEXPORT void JNICALL
@@ -566,6 +678,13 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
     }
 
     MelonDSAndroid::cleanup();
+
+    if (multiplayerSessionActive)
+    {
+        // The session outlives the game, so hand it back to the background pump
+        std::lock_guard<std::mutex> lock(multiplayerMutex);
+        multiplayerPumpActive = true;
+    }
 
     env->DeleteGlobalRef(globalCameraManager);
 
