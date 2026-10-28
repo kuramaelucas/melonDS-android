@@ -97,6 +97,21 @@ object MelonEmulator {
 
 	external fun stopEmulation()
 
+    external fun multiplayerStartHost(playerName: String): Boolean
+
+    external fun multiplayerJoin(playerName: String, hostAddress: String): Boolean
+
+    external fun multiplayerStop()
+
+    external fun multiplayerStartDiscovery(): Boolean
+
+    /**
+     * Returns the discovered sessions. Each entry has the format "address|session name|players|max players".
+     */
+    external fun multiplayerPollSessions(): Array<String>
+
+    external fun multiplayerStopDiscovery()
+
     fun saveState(path: Uri): Boolean {
         return saveStateInternal(path.toString())
     }

@@ -646,6 +646,28 @@
     <string name="connection_wifi_aware">Wi-Fi Aware</string>
     <string name="connection_wifi_direct">Wi-Fi Direct</string>
     <string name="no_connection_methods_available">No connection methods available on this device</string>
+    <string name="category_multiplayer">Multiplayer</string>
+    <string name="category_multiplayer_summary">Local wireless over Wi-Fi (trade, battle)</string>
+    <string name="multiplayer_role_off">Off</string>
+    <string name="multiplayer_player_name">Player name</string>
+    <string name="multiplayer_search_sessions">Search for sessions</string>
+    <string name="multiplayer_host_failed">Failed to host the multiplayer session. Another session may already be running on this device.</string>
+    <string name="multiplayer_join_failed">Failed to connect to the host. Check the IP address and that both devices are on the same Wi-Fi network.</string>
+    <string name="multiplayer_join_address_missing">No host address set for multiplayer. Playing without multiplayer.</string>
+    <string name="multiplayer_host_address">Host IP address</string>
+    <string name="multiplayer_host_address_hint">Enter the IP address shown on the host device. Both devices must be on the same Wi-Fi network.</string>
+    <string name="multiplayer_local_address">This device\'s IP address</string>
+    <string name="multiplayer_local_address_unknown">Not connected to a Wi-Fi network</string>
+    <string-array name="multiplayer_role_options">
+        <item>@string/multiplayer_role_off</item>
+        <item>@string/multiplayer_role_host</item>
+        <item>@string/multiplayer_role_join</item>
+    </string-array>
+    <string-array name="multiplayer_role_values">
+        <item>off</item>
+        <item>host</item>
+        <item>join</item>
+    </string-array>
     <string name="multiplayer_role_title">Multiplayer</string>
     <string name="multiplayer_role_host">Host</string>
     <string name="multiplayer_role_join">Join</string>

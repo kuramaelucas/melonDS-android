@@ -15,6 +15,7 @@
 #include "MelonInstance.h"
 #include "NDS.h"
 #include "NDSCart.h"
+#include "net/MPInterface.h"
 #include "net/Net_Slirp.h"
 #include "Platform.h"
 #include "SDCardArgsBuilder.h"
@@ -356,6 +357,7 @@ u32 MelonInstance::runFrame()
         nds->GPU.GetRenderer3D().SetOutputTexture(backBuffer, renderFrame->frameTexture);
     }
 
+    melonDS::MPInterface::Get().Process();
     u32 nLines = nds->RunFrame();
     retroAchievementsManager->FrameUpdate();
 

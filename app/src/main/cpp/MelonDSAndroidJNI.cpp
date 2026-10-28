@@ -23,6 +23,8 @@
 #include "performancehint/PerformanceHintManagerFactory.h"
 
 #include "Platform.h"
+#include "net/LAN.h"
+#include "net/MPInterface.h"
 
 enum GbaSlotType {
     NONE = 0,
@@ -455,6 +457,95 @@ Java_me_magnum_melonds_MelonEmulator_getRewindWindow(JNIEnv* env, jobject thiz) 
     jmethodID rewindWindowConstructor = env->GetMethodID(rewindWindowClass, "<init>", "(ILjava/util/ArrayList;)V");
     jobject rewindWindow = env->NewObject(rewindWindowClass, rewindWindowConstructor, currentRewindWindow.currentFrame, rewindStateList);
     return rewindWindow;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerStartHost(JNIEnv* env, jobject thiz, jstring playerName)
+{
+    melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
+    const char* name = env->GetStringUTFChars(playerName, nullptr);
+    bool result = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).StartHost(name, 2);
+    env->ReleaseStringUTFChars(playerName, name);
+
+    if (!result)
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    return result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerJoin(JNIEnv* env, jobject thiz, jstring playerName, jstring hostAddress)
+{
+    melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
+    const char* name = env->GetStringUTFChars(playerName, nullptr);
+    const char* host = env->GetStringUTFChars(hostAddress, nullptr);
+    bool result = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).StartClient(name, host);
+    env->ReleaseStringUTFChars(playerName, name);
+    env->ReleaseStringUTFChars(hostAddress, host);
+
+    if (!result)
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    return result;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerStartDiscovery(JNIEnv* env, jobject thiz)
+{
+    // Never interfere with a session that is already running
+    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+        return JNI_FALSE;
+
+    melonDS::MPInterface::Set(melonDS::MPInterface_LAN);
+    bool result = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).StartDiscovery();
+    if (!result)
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    return result;
+}
+
+// Each entry has the format "<address>|<session name>|<players>|<max players>"
+JNIEXPORT jobjectArray JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerPollSessions(JNIEnv* env, jobject thiz)
+{
+    jclass stringClass = env->FindClass("java/lang/String");
+    if (melonDS::MPInterface::GetType() != melonDS::MPInterface_LAN)
+        return env->NewObjectArray(0, stringClass, nullptr);
+
+    auto& lan = static_cast<melonDS::LAN&>(melonDS::MPInterface::Get());
+    lan.Process();
+    auto sessions = lan.GetDiscoveryList();
+
+    jobjectArray result = env->NewObjectArray((jsize) sessions.size(), stringClass, nullptr);
+    jsize index = 0;
+    for (const auto& [address, data] : sessions)
+    {
+        char entry[160];
+        snprintf(entry, sizeof(entry), "%u.%u.%u.%u|%s|%d|%d",
+                 (address >> 24) & 0xFF, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF,
+                 data.SessionName, data.NumPlayers, data.MaxPlayers);
+        jstring entryString = env->NewStringUTF(entry);
+        env->SetObjectArrayElement(result, index++, entryString);
+        env->DeleteLocalRef(entryString);
+    }
+    return result;
+}
+
+JNIEXPORT void JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerStopDiscovery(JNIEnv* env, jobject thiz)
+{
+    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+    {
+        static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).EndDiscovery();
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_me_magnum_melonds_MelonEmulator_multiplayerStop(JNIEnv* env, jobject thiz)
+{
+    if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+    {
+        static_cast<melonDS::LAN&>(melonDS::MPInterface::Get()).EndSession();
+        melonDS::MPInterface::Set(melonDS::MPInterface_Dummy);
+    }
 }
 
 JNIEXPORT void JNICALL

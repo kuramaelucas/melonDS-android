@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+            android:key="multiplayer_role"
+            android:title="@string/multiplayer_role_title"
+            android:summary="%s"
+            app:iconSpaceReserved="false"
+            android:entries="@array/multiplayer_role_options"
+            android:entryValues="@array/multiplayer_role_values"
+            android:defaultValue="off" />
+
+    <EditTextPreference
+            android:key="multiplayer_player_name"
+            android:title="@string/multiplayer_player_name"
+            android:dependency="multiplayer_role"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"
+            android:defaultValue="Player" />
+
+    <EditTextPreference
+            android:key="multiplayer_host_address"
+            android:title="@string/multiplayer_host_address"
+            android:dialogMessage="@string/multiplayer_host_address_hint"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
+
+    <Preference
+            android:key="multiplayer_search_sessions"
+            android:title="@string/multiplayer_search_sessions"
+            app:iconSpaceReserved="false" />
+
+    <!-- Only used to display this device's IP address -->
+    <Preference
+            android:key="multiplayer_local_address"
+            android:title="@string/multiplayer_local_address"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+</PreferenceScreen>

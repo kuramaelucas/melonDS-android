@@ -38,6 +38,12 @@
             android:fragment="me.magnum.melonds.ui.settings.fragments.AudioPreferencesFragment" />
 
     <Preference
+            android:title="@string/category_multiplayer"
+            android:summary="@string/category_multiplayer_summary"
+            app:icon="@drawable/ic_input"
+            android:fragment="me.magnum.melonds.ui.settings.fragments.MultiplayerPreferencesFragment" />
+
+    <Preference
             android:title="@string/input"
             android:summary="@string/input_summary"
             app:icon="@drawable/ic_input"

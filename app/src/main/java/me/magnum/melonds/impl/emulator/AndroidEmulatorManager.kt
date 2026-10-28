@@ -2,7 +2,11 @@ package me.magnum.melonds.impl.emulator
 
 import android.content.Context
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
+import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -10,6 +14,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import me.magnum.melonds.MelonEmulator
+import me.magnum.melonds.R
 import me.magnum.melonds.common.PermissionHandler
 import me.magnum.melonds.common.romprocessors.RomFileProcessorFactory
 import me.magnum.melonds.common.runtime.ScreenshotFrameBufferProvider
@@ -121,6 +126,7 @@ class AndroidEmulatorManager(
                 RomLaunchResult.LaunchFailed(loadResult)
             } else {
                 messageQueue.start()
+                startMultiplayerSession()
                 MelonEmulator.setupCheats(cheats.toTypedArray())
                 MelonEmulator.startEmulation()
 
@@ -215,8 +221,36 @@ class AndroidEmulatorManager(
 
     override fun stopEmulator() {
         MelonEmulator.stopEmulation()
+        MelonEmulator.multiplayerStop()
         cameraManager.stopCurrentCameraSource()
         messageQueue.stop()
+    }
+
+    private fun startMultiplayerSession() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val playerName = preferences.getString("multiplayer_player_name", null)?.takeIf { it.isNotBlank() } ?: "Player"
+
+        when (preferences.getString("multiplayer_role", "off")) {
+            "host" -> {
+                if (!MelonEmulator.multiplayerStartHost(playerName)) {
+                    showMultiplayerError(R.string.multiplayer_host_failed)
+                }
+            }
+            "join" -> {
+                val hostAddress = preferences.getString("multiplayer_host_address", null)?.trim()
+                if (hostAddress.isNullOrEmpty()) {
+                    showMultiplayerError(R.string.multiplayer_join_address_missing)
+                } else if (!MelonEmulator.multiplayerJoin(playerName, hostAddress)) {
+                    showMultiplayerError(R.string.multiplayer_join_failed)
+                }
+            }
+        }
+    }
+
+    private fun showMultiplayerError(messageRes: Int) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, messageRes, Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun cleanEmulator() {
