@@ -167,7 +167,7 @@ class SharedPreferencesSettingsRepository(
             audioInterpolation = getAudioInterpolation(),
             audioBitrate = getAudioBitrate(),
             volume = getVolume(),
-            audioLatency = AudioLatency.LOW,
+            audioLatency = getAudioLatency(),
             micSource = getMicSource(),
             firmwareConfiguration = getFirmwareConfiguration(),
             rendererConfiguration = renderConfigurationFlow.first(),
