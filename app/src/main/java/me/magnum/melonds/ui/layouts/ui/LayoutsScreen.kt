@@ -238,7 +238,7 @@ private fun LayoutItem(
             .fillMaxWidth()
             .focusRequester(mainFocusRequester)
             .focusProperties {
-                end = if (isCustomLayout) optionsFocusRequester else FocusRequester.Default
+                end = optionsFocusRequester
             }
             .clickable(onClick = onLayoutSelected)
             .onKeyEvent {
@@ -267,26 +267,27 @@ private fun LayoutItem(
             overflow = TextOverflow.Ellipsis,
         )
 
-        if (isCustomLayout) {
-            Box {
-                IconButton(
-                    modifier = Modifier
-                        .focusRequester(optionsFocusRequester)
-                        .focusProperties {
-                            start = mainFocusRequester
-                        },
-                    onClick = { showMenu = true },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.options),
-                    )
-                }
+        Box {
+            IconButton(
+                modifier = Modifier
+                    .focusRequester(optionsFocusRequester)
+                    .focusProperties {
+                        start = mainFocusRequester
+                    },
+                onClick = { showMenu = true },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.options),
+                )
+            }
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                ) {
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+            ) {
+                // Built-in layouts can't be edited or deleted, but they can be copied. The copy can then be edited
+                if (isCustomLayout) {
                     DropdownMenuItem(
                         onClick = {
                             showMenu = false
@@ -295,16 +296,18 @@ private fun LayoutItem(
                     ) {
                         Text(stringResource(R.string.edit))
                     }
+                }
 
-                    DropdownMenuItem(
-                        onClick = {
-                            showMenu = false
-                            onCopyLayout()
-                        },
-                    ) {
-                        Text(stringResource(R.string.copy))
-                    }
+                DropdownMenuItem(
+                    onClick = {
+                        showMenu = false
+                        onCopyLayout()
+                    },
+                ) {
+                    Text(stringResource(R.string.copy))
+                }
 
+                if (isCustomLayout) {
                     DropdownMenuItem(
                         onClick = {
                             showMenu = false
@@ -315,10 +318,6 @@ private fun LayoutItem(
                     }
                 }
             }
-        } else {
-            // Placeholder box to ensure the UI has the same height for all items, even if they don't display the options dropdown. This height is equal to the minimum
-            // interactive component size as defined by the minimumInteractiveComponentSize() modifier
-            Box(Modifier.height(48.dp))
         }
     }
 }

@@ -28,6 +28,9 @@ abstract class BaseLayoutsViewModel(protected val layoutsRepository: LayoutsRepo
         val newLayout = layout.copy(
             id = null,
             name = copyName,
+            // Copies of built-in layouts can be edited, so they must be custom layouts. Keep track of the original layout so that its design is used as the base
+            type = LayoutConfiguration.LayoutType.CUSTOM,
+            baseLayoutId = if (layout.type == LayoutConfiguration.LayoutType.DEFAULT) layout.id else layout.baseLayoutId,
         )
 
         viewModelScope.launch {

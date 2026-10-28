@@ -69,33 +69,42 @@ class UILayoutProvider(private val defaultLayoutProvider: DefaultLayoutProvider)
     }
 
     private fun getOptimalLayoutForVariant(layoutConfiguration: LayoutConfiguration, variant: UILayoutVariant): UILayout {
-        if (layoutConfiguration.id == LayoutConfiguration.POKEMON_ID) {
-            return defaultLayoutProvider.buildPokemonLayout(variant)
-        }
-
         val exactLayoutMatch = layoutConfiguration.layoutVariants[variant]
         if (exactLayoutMatch != null) {
-            return populateLayoutIfRequired(exactLayoutMatch, variant)
+            return populateLayoutIfRequired(layoutConfiguration, exactLayoutMatch, variant)
         }
 
         val bestLayoutVariant = findSimilarLayoutVariant(layoutConfiguration, variant)
         if (bestLayoutVariant != null) {
-            return populateLayoutIfRequired(bestLayoutVariant, variant)
+            return populateLayoutIfRequired(layoutConfiguration, bestLayoutVariant, variant)
         }
 
-        return defaultLayoutProvider.buildDefaultLayout(variant)
+        return buildBaseLayout(layoutConfiguration, variant)
+    }
+
+    /**
+     * Builds the layout used for variants that were not customized by the user. Layouts based on the built-in Pokemon layout (the layout itself or copies of it) use its
+     * design, while every other layout uses the default design.
+     */
+    private fun buildBaseLayout(layoutConfiguration: LayoutConfiguration, variant: UILayoutVariant): UILayout {
+        val isPokemonBased = layoutConfiguration.id == LayoutConfiguration.POKEMON_ID || layoutConfiguration.baseLayoutId == LayoutConfiguration.POKEMON_ID
+        return if (isPokemonBased) {
+            defaultLayoutProvider.buildPokemonLayout(variant)
+        } else {
+            defaultLayoutProvider.buildDefaultLayout(variant)
+        }
     }
 
     /**
      * Populates the given [layout] with default components if they were not placed by the user.
      */
-    private fun populateLayoutIfRequired(layout: UILayout, variant: UILayoutVariant): UILayout {
+    private fun populateLayoutIfRequired(layoutConfiguration: LayoutConfiguration, layout: UILayout, variant: UILayoutVariant): UILayout {
         val mainScreenRequiresDefaultLayout = layout.mainScreenLayout.components == null
         val secondaryScreenRequiresDefaultLayout = layout.secondaryScreenLayout.components == null && variant.displays.secondaryScreenDisplay != null
         val requiresDefaultLayout = mainScreenRequiresDefaultLayout || secondaryScreenRequiresDefaultLayout
 
         return if (requiresDefaultLayout) {
-            val defaultLayout = defaultLayoutProvider.buildDefaultLayout(variant)
+            val defaultLayout = buildBaseLayout(layoutConfiguration, variant)
             val mainScreenLayout = if (mainScreenRequiresDefaultLayout) {
                 layout.mainScreenLayout.copy(components = defaultLayout.mainScreenLayout.components)
             } else {

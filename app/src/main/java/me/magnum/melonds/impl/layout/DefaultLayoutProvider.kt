@@ -383,6 +383,11 @@ class DefaultLayoutProvider(
     }
 
     fun buildPokemonLayout(variant: UILayoutVariant): UILayout {
+        // The Pokemon layout is designed for a single display. Use the default layout when an external display is connected
+        if (variant.displays.secondaryScreenDisplay != null) {
+            return buildDefaultLayout(variant)
+        }
+
         val width = variant.uiSize.x
         val height = variant.uiSize.y
         val orientation = variant.orientation
@@ -422,9 +427,11 @@ class DefaultLayoutProvider(
         val topScreenView = Rect(safeLeft + screenMargin, safeTop, screenWidth, screenHeight)
         val bottomScreenView = Rect(safeLeft + screenMargin, safeTop + screenHeight, screenWidth, screenHeight)
 
+        // Place the utility and shoulder buttons below the screens if there's room for them. Otherwise, place them over the top screen, since placing them over the bottom
+        // screen would block touch input in that area
         val screensBottom = safeTop + screenHeight * 2
         val utilityButtonsTop = if (screensBottom + lrButtonsSize + baseLargeButtonsSize.toInt() > height) {
-            safeTop + screenHeight
+            safeTop
         } else {
             screensBottom
         }
@@ -468,23 +475,32 @@ class DefaultLayoutProvider(
         val smallButtonsSize = screenUnitsConverter.dpToPixels(40f).toInt()
         val spacing4dp = screenUnitsConverter.dpToPixels(4f).toInt()
 
-        var topScreenWidth = (safeWidth * 0.66f).roundToInt()
-        var topScreenHeight = (topScreenWidth / consoleAspectRatio).toInt()
-        if (topScreenHeight > safeHeight) {
-            topScreenWidth = (safeHeight * consoleAspectRatio).toInt()
-            topScreenHeight = safeHeight
-        }
-
-        val topScreenView = Rect(safeLeft, safeTop, topScreenWidth, topScreenHeight)
-        val bottomScreenWidth = safeWidth - topScreenWidth
-        val bottomScreenHeight = (bottomScreenWidth / consoleAspectRatio).toInt()
-        val bottomScreenView = Rect(safeLeft + topScreenWidth, safeTop, bottomScreenWidth, bottomScreenHeight)
-
         val dpadLeftOffset = screenUnitsConverter.dpToPixels(24f).toInt()
-        val dpadView = Rect(safeLeft + dpadLeftOffset, height - safeBottom - dpadSize, dpadSize, dpadSize)
-
         val buttonsUpOffset = screenUnitsConverter.dpToPixels(20f).toInt()
+
+        // The bottom (touch) screen is placed on the top right corner, as large as possible while leaving room for the face buttons below it, so that no button ever
+        // covers the touch screen
+        val bottomScreenMaxHeight = safeHeight - buttonsSize - buttonsUpOffset
+        val bottomScreenWidth = min(safeWidth / 2, (bottomScreenMaxHeight * consoleAspectRatio).toInt()).coerceAtLeast(0)
+        val bottomScreenHeight = (bottomScreenWidth / consoleAspectRatio).toInt()
+        val bottomScreenView = Rect(width - safeRight - bottomScreenWidth, safeTop, bottomScreenWidth, bottomScreenHeight)
+
+        // The top screen takes the remaining area on the left, vertically centered
+        val leftAreaWidth = safeWidth - bottomScreenWidth
+        val topScreenWidth = min(leftAreaWidth, (safeHeight * consoleAspectRatio).toInt())
+        val topScreenHeight = (topScreenWidth / consoleAspectRatio).toInt()
+        val topScreenView = Rect(safeLeft + (leftAreaWidth - topScreenWidth) / 2, safeTop + (safeHeight - topScreenHeight) / 2, topScreenWidth, topScreenHeight)
+
+        val dpadView = Rect(safeLeft + dpadLeftOffset, height - safeBottom - dpadSize, dpadSize, dpadSize)
         val buttonsView = Rect(width - safeRight - buttonsSize, height - safeBottom - buttonsSize - buttonsUpOffset, buttonsSize, buttonsSize)
+
+        // L and R are placed next to the D-pad and face buttons, at the bottom, so that they are reachable with the thumbs and don't cover the touch screen
+        val lrButtonsTop = height - safeBottom - lrButtonsSize
+        val lButtonView = Rect(dpadView.x + dpadSize + spacing4dp, lrButtonsTop, lrButtonsSize, lrButtonsSize)
+        val rButtonView = Rect(buttonsView.x - spacing4dp - lrButtonsSize, lrButtonsTop, lrButtonsSize, lrButtonsSize)
+
+        // Center the remaining buttons on the left area (over the top screen), since the right side is occupied by the touch screen
+        val centerX = safeLeft + leftAreaWidth / 2
 
         return ScreenLayout(
             listOf(
@@ -492,14 +508,14 @@ class DefaultLayoutProvider(
                 PositionedLayoutComponent(bottomScreenView, LayoutComponent.BOTTOM_SCREEN),
                 PositionedLayoutComponent(dpadView, LayoutComponent.DPAD),
                 PositionedLayoutComponent(buttonsView, LayoutComponent.BUTTONS),
-                PositionedLayoutComponent(Rect(safeLeft, safeTop, lrButtonsSize, lrButtonsSize), LayoutComponent.BUTTON_L),
-                PositionedLayoutComponent(Rect(width - safeRight - lrButtonsSize, safeTop, lrButtonsSize, lrButtonsSize), LayoutComponent.BUTTON_R),
-                PositionedLayoutComponent(Rect((width - spacing4dp) / 2 - smallButtonsSize, height - safeBottom - smallButtonsSize, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_SELECT),
-                PositionedLayoutComponent(Rect((width + spacing4dp) / 2, height - safeBottom - smallButtonsSize, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_START),
-                PositionedLayoutComponent(Rect(width / 2 - (smallButtonsSize * 2.0 + spacing4dp * 1.5).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_HINGE),
-                PositionedLayoutComponent(Rect(width / 2 - smallButtonsSize - (spacing4dp / 2.0).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_TOGGLE_SOFT_INPUT),
-                PositionedLayoutComponent(Rect(width / 2 + (spacing4dp / 2.0).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_MICROPHONE_TOGGLE),
-                PositionedLayoutComponent(Rect(width / 2 + smallButtonsSize + (spacing4dp * 1.5).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE),
+                PositionedLayoutComponent(lButtonView, LayoutComponent.BUTTON_L),
+                PositionedLayoutComponent(rButtonView, LayoutComponent.BUTTON_R),
+                PositionedLayoutComponent(Rect(centerX - smallButtonsSize - spacing4dp / 2, height - safeBottom - smallButtonsSize, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_SELECT),
+                PositionedLayoutComponent(Rect(centerX + spacing4dp / 2, height - safeBottom - smallButtonsSize, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_START),
+                PositionedLayoutComponent(Rect(centerX - (smallButtonsSize * 2.0 + spacing4dp * 1.5).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_HINGE),
+                PositionedLayoutComponent(Rect(centerX - smallButtonsSize - (spacing4dp / 2.0).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_TOGGLE_SOFT_INPUT),
+                PositionedLayoutComponent(Rect(centerX + (spacing4dp / 2.0).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_MICROPHONE_TOGGLE),
+                PositionedLayoutComponent(Rect(centerX + smallButtonsSize + (spacing4dp * 1.5).toInt(), safeTop, smallButtonsSize, smallButtonsSize), LayoutComponent.BUTTON_FAST_FORWARD_TOGGLE),
             )
         )
     }

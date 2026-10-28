@@ -10,6 +10,8 @@ data class LayoutConfiguration(
     val useCustomOpacity: Boolean,
     val opacity: Int,
     val layoutVariants: Map<UILayoutVariant, UILayout>,
+    // ID of the built-in layout this layout was copied from. Used to generate layout variants that were not customized by the user
+    val baseLayoutId: UUID? = null,
 ) {
 
     companion object {
