@@ -650,6 +650,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        viewModel.setAppInForeground(true)
         updateDisplays()
         getSystemService<DisplayManager>()?.registerDisplayListener(displayListener, null)
         getSystemService<InputManager>()?.registerInputDeviceListener(connectedControllerManager, null)
@@ -1081,6 +1082,7 @@ class EmulatorActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+        viewModel.setAppInForeground(false)
         getSystemService<DisplayManager>()?.unregisterDisplayListener(displayListener)
         getSystemService<InputManager>()?.unregisterInputDeviceListener(connectedControllerManager)
         connectedControllerManager.stopTrackingControllers()

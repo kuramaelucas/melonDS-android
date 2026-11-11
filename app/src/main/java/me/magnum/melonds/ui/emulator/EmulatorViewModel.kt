@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -123,6 +124,7 @@ class EmulatorViewModel @Inject constructor(
     private val sessionCoroutineScope = EmulatorSessionCoroutineScope()
     private var raSessionJob: Job? = null
 
+    private val isAppInForeground = MutableStateFlow(true)
     private val _emulatorState = MutableStateFlow<EmulatorState>(EmulatorState.Uninitialized)
     val emulatorState = _emulatorState.asStateFlow()
 
@@ -359,6 +361,10 @@ class EmulatorViewModel @Inject constructor(
                 emulatorManager.updateCheats(cheats)
             }
         }
+    }
+
+    fun setAppInForeground(isInForeground: Boolean) {
+        isAppInForeground.value = isInForeground
     }
 
     fun pauseEmulator(showPauseMenu: Boolean) {
@@ -1000,7 +1006,8 @@ class EmulatorViewModel @Inject constructor(
 
                     delay(30.seconds)
                     while (isActive) {
-                        // TODO: Should we pause the session if the app goes to background? If so, how?
+                        // Don't report activity while the emulator isn't visible. The heartbeat resumes as soon as the app returns to the foreground
+                        isAppInForeground.first { it }
                         val richPresenceDescription = MelonEmulator.getRichPresenceStatus()
                         retroAchievementsRepository.sendSessionHeartbeat(rom.retroAchievementsHash, isHardcoreModeEnabled, richPresenceDescription)
                         delay(2.minutes)
