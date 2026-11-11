@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import me.magnum.melonds.domain.services.PowerSavingMonitor
+import me.magnum.melonds.domain.services.PowerSavingPolicy
 
 class AndroidPowerSavingMonitor(
     private val context: Context,
@@ -88,12 +89,11 @@ class AndroidPowerSavingMonitor(
     }
 
     private fun updateReason() {
-        _powerSavingReason.value = when {
-            !preferences.getBoolean(AUTOMATIC_POWER_SAVING_PREFERENCE, true) -> null
-            isThermalThrottlingRequired -> PowerSavingMonitor.Reason.THERMAL
-            isBatteryGameModeEnabled -> PowerSavingMonitor.Reason.BATTERY_GAME_MODE
-            isBatterySaverEnabled -> PowerSavingMonitor.Reason.BATTERY_SAVER
-            else -> null
-        }
+        _powerSavingReason.value = PowerSavingPolicy.resolveReason(
+            isAutomaticPowerSavingEnabled = preferences.getBoolean(AUTOMATIC_POWER_SAVING_PREFERENCE, true),
+            isThermalThrottlingRequired = isThermalThrottlingRequired,
+            isBatteryGameModeEnabled = isBatteryGameModeEnabled,
+            isBatterySaverEnabled = isBatterySaverEnabled,
+        )
     }
 }

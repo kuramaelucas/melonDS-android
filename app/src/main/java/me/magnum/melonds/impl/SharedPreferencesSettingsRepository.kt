@@ -54,6 +54,7 @@ import me.magnum.melonds.domain.model.render.RenderStrategy
 import me.magnum.melonds.domain.model.rom.Rom
 import me.magnum.melonds.domain.repositories.SettingsRepository
 import me.magnum.melonds.domain.services.PowerSavingMonitor
+import me.magnum.melonds.domain.services.PowerSavingPolicy
 import me.magnum.melonds.impl.dtos.input.ControllerConfigurationDto
 import me.magnum.melonds.impl.input.ControllerConfigurationFactory
 import me.magnum.melonds.ui.Theme
@@ -75,7 +76,6 @@ class SharedPreferencesSettingsRepository(
     companion object {
         private const val TAG = "SPSettingsRepository"
         private const val CONTROLLER_CONFIG_FILE = "controller_config.json"
-        private const val POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER = 2f
         private const val POWER_SAVING_INTERNAL_RESOLUTION = 1
     }
 
@@ -207,16 +207,11 @@ class SharedPreferencesSettingsRepository(
 
     override fun getFastForwardSpeedMultiplier(): Float {
         val speedMultiplier = preferences.getString("fast_forward_speed_multiplier", "-1")!!.toFloat()
-        if (powerSavingMonitor.powerSavingReason.value == null || !isPowerSavingFastForwardLimitEnabled()) {
-            return speedMultiplier
-        }
-
-        // Values <= 0 mean unlimited speed
-        return if (speedMultiplier <= 0 || speedMultiplier > POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER) {
-            POWER_SAVING_MAX_FAST_FORWARD_MULTIPLIER
-        } else {
-            speedMultiplier
-        }
+        return PowerSavingPolicy.limitFastForwardMultiplier(
+            multiplier = speedMultiplier,
+            isPowerSavingActive = powerSavingMonitor.powerSavingReason.value != null,
+            isLimitEnabled = isPowerSavingFastForwardLimitEnabled(),
+        )
     }
 
     override fun getFastForwardMode(): FastForwardMode {
