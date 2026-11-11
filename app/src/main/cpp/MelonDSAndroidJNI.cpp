@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <pthread.h>
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -103,11 +104,12 @@ bool paused;
 std::atomic_bool isThreadReallyPaused = false;
 int observedFrames = 0;
 float fps = 0;
-int targetFps;
-float fastForwardSpeedMultiplier;
-bool limitFps = true;
-bool isFastForwardEnabled = false;
-bool fastForwardFrameSkip = true;
+// Written by the UI thread and read by the emulator thread
+std::atomic<int> targetFps{60};
+std::atomic<float> fastForwardSpeedMultiplier{1.0f};
+std::atomic<bool> limitFps{true};
+std::atomic<bool> isFastForwardEnabled{false};
+std::atomic<bool> fastForwardFrameSkip{true};
 
 jobject globalCameraManager;
 MelonDSAndroidCameraHandler* androidCameraHandler;
