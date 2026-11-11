@@ -57,6 +57,13 @@ android {
         }
         getByName("debug") {
             applicationIdSuffix = ".dev"
+            externalNativeBuild {
+                cmake {
+                    // Without optimizations (the default for debug builds) the emulator core is too slow to properly evaluate performance and power usage. Remove this line when
+                    // stepping through native code
+                    arguments += "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                }
+            }
         }
     }
 

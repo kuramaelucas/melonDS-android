@@ -8,3 +8,5 @@
 /captures
 .externalNativeBuild
 .kotlin
+# Local test ROMs
+/rom/
