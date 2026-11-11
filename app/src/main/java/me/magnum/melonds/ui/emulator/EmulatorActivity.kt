@@ -771,9 +771,11 @@ class EmulatorActivity : AppCompatActivity() {
             return
         }
 
+        val isFastForwardLimited = viewModel.isPowerSavingFastForwardLimitEnabled()
         val message = when (reason) {
-            PowerSavingMonitor.Reason.THERMAL -> R.string.power_saving_enabled_thermal
-            PowerSavingMonitor.Reason.BATTERY_GAME_MODE -> R.string.power_saving_enabled_battery_game_mode
+            PowerSavingMonitor.Reason.THERMAL -> if (isFastForwardLimited) R.string.power_saving_enabled_thermal else R.string.power_saving_enabled_thermal_resolution_only
+            PowerSavingMonitor.Reason.BATTERY_GAME_MODE -> if (isFastForwardLimited) R.string.power_saving_enabled_battery_game_mode else R.string.power_saving_enabled_battery_game_mode_resolution_only
+            PowerSavingMonitor.Reason.BATTERY_SAVER -> if (isFastForwardLimited) R.string.power_saving_enabled_battery_saver else R.string.power_saving_enabled_battery_saver_resolution_only
             null -> R.string.power_saving_disabled
         }
         lastNotifiedPowerSavingReason = reason

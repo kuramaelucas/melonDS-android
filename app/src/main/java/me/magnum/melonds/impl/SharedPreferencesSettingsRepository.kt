@@ -174,6 +174,7 @@ class SharedPreferencesSettingsRepository(
             dsiNandUri = dsiDirDocument?.findFile("nand.bin")?.uri,
             internalDirectory = context.filesDir.absolutePath,
             fastForwardSpeedMultiplier = getFastForwardSpeedMultiplier(),
+            fastForwardFrameSkip = isFastForwardFrameSkipEnabled(),
             rewindEnabled = isRewindEnabled(),
             rewindPeriodSeconds = getRewindPeriod(),
             rewindWindowSeconds = getRewindWindow(),
@@ -206,7 +207,7 @@ class SharedPreferencesSettingsRepository(
 
     override fun getFastForwardSpeedMultiplier(): Float {
         val speedMultiplier = preferences.getString("fast_forward_speed_multiplier", "-1")!!.toFloat()
-        if (powerSavingMonitor.powerSavingReason.value == null) {
+        if (powerSavingMonitor.powerSavingReason.value == null || !isPowerSavingFastForwardLimitEnabled()) {
             return speedMultiplier
         }
 
@@ -221,6 +222,14 @@ class SharedPreferencesSettingsRepository(
     override fun getFastForwardMode(): FastForwardMode {
         val fastForwardModePreference = preferences.getString("fast_forward_mode", "toggle")!!
         return enumValueOfIgnoreCase(fastForwardModePreference)
+    }
+
+    override fun isFastForwardFrameSkipEnabled(): Boolean {
+        return preferences.getBoolean("enable_fast_forward_frame_skip", true)
+    }
+
+    override fun isPowerSavingFastForwardLimitEnabled(): Boolean {
+        return preferences.getBoolean("power_saving_limit_fast_forward", false)
     }
 
     override fun isRewindEnabled(): Boolean {

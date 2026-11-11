@@ -126,6 +126,12 @@ namespace MelonDSAndroid
         currentConfiguration = sharedConfig;
     }
 
+    void setFrameSkipEnabled(bool enabled)
+    {
+        if (instance)
+            instance->setFrameSkipEnabled(enabled);
+    }
+
     int loadRom(std::string romPath, std::string sramPath, RomGbaSlotConfig* gbaSlotConfig)
     {
         if (!instance->loadRom(std::move(romPath), std::move(sramPath)))

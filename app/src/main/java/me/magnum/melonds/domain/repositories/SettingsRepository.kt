@@ -18,6 +18,8 @@ interface SettingsRepository {
     fun getTheme(): Theme
     fun getFastForwardSpeedMultiplier(): Float
     fun getFastForwardMode(): FastForwardMode
+    fun isFastForwardFrameSkipEnabled(): Boolean
+    fun isPowerSavingFastForwardLimitEnabled(): Boolean
     fun isRewindEnabled(): Boolean
     fun getRewindWindowPosition(): RewindWindowPosition
     fun isSustainedPerformanceModeEnabled(): Boolean

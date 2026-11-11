@@ -2,6 +2,7 @@
 #define MELONINSTANCE_H
 
 #include <atomic>
+#include <chrono>
 #include <string>
 #include "Args.h"
 #include "Configuration.h"
@@ -40,6 +41,7 @@ public:
     void reset();
     melonDS::u32 runFrame();
     void stop();
+    void setFrameSkipEnabled(bool enabled);
 
     void updateMotionData(float ax, float ay, float az, float rx, float ry, float rz);
     float getMotionData(MotionQueryType type);
@@ -74,6 +76,7 @@ public:
     std::vector<RetroAchievements::RARuntimeAchievement> getRuntimeAchievements();
 
 private:
+    bool shouldSkipNextFrame();
     void updateRenderer();
     void setBatteryLevels();
     void setDateTime();
@@ -100,6 +103,8 @@ private:
     Renderer currentRenderer;
     bool isRenderConfigurationDirty;
     int frame;
+    std::atomic<bool> frameSkipEnabled{false};
+    std::chrono::steady_clock::time_point nextFrameDrawTime{};
 };
 
 }

@@ -42,6 +42,7 @@ namespace MelonDSAndroid {
     extern std::string getRichPresenceStatus();
     extern std::vector<RetroAchievements::RARuntimeAchievement> getRuntimeAchievements();
     extern void updateEmulatorConfiguration(std::unique_ptr<EmulatorConfiguration> emulatorConfiguration);
+    extern void setFrameSkipEnabled(bool enabled);
 
     /**
      * Loads the NDS ROM and, optionally, the GBA ROM.

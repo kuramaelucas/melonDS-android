@@ -800,6 +800,10 @@ class EmulatorViewModel @Inject constructor(
         powerSavingMonitor.refresh()
     }
 
+    fun isPowerSavingFastForwardLimitEnabled(): Boolean {
+        return settingsRepository.isPowerSavingFastForwardLimitEnabled()
+    }
+
     fun getFastForwardMode(): FastForwardMode {
         return settingsRepository.getFastForwardMode()
     }

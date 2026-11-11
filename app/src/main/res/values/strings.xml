@@ -172,7 +172,17 @@
     <string name="fast_forward_mode">Fast-forward button behaviour</string>
     <string name="power_saving_enabled_thermal">The device is overheating. Internal resolution reduced and fast-forward limited to 2x until it cools down</string>
     <string name="power_saving_enabled_battery_game_mode">Battery game mode enabled. Internal resolution reduced and fast-forward limited to 2x</string>
+    <string name="power_saving_enabled_battery_saver">Battery saver enabled. Internal resolution reduced and fast-forward limited to 2x</string>
+    <string name="power_saving_enabled_thermal_resolution_only">The device is overheating. Internal resolution reduced until it cools down</string>
+    <string name="power_saving_enabled_battery_game_mode_resolution_only">Battery game mode enabled. Internal resolution reduced</string>
+    <string name="power_saving_enabled_battery_saver_resolution_only">Battery saver enabled. Internal resolution reduced</string>
     <string name="power_saving_disabled">Power saving disabled. Video and fast-forward settings restored</string>
+    <string name="fast_forward_frame_skip">Skip frames during fast-forward</string>
+    <string name="fast_forward_frame_skip_summary">Only draws the frames that the screen can show, which makes fast-forward faster and saves battery. Disable it if a game shows graphical glitches during fast-forward.</string>
+    <string name="automatic_power_saving">Automatic power saving</string>
+    <string name="automatic_power_saving_summary">Reduces the internal resolution when the device overheats or when the battery saver or battery game mode is enabled.</string>
+    <string name="power_saving_limit_fast_forward">Limit fast-forward while saving power</string>
+    <string name="power_saving_limit_fast_forward_summary">Limits fast-forward to 2x while power saving is active. The device will heat up less, but fast-forward will be slower.</string>
     <string name="rewind_description">When enabled, a save-state is periodically saved automatically. Whenever you want to go back on your progress by a short amount of time, just open the rewind screen and select the state that you want to resume from.\n\nBe aware that by enabling this feature, you may experience occasional stutters if your device is not powerful enough. A considerable amount of memory is also used depending on how often you want the state to be captured and for how long it should be kept.</string>
     <string name="rewind_save_period">Save period</string>
     <string name="rewind_length">Rewind length</string>

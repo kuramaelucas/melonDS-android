@@ -131,7 +131,17 @@
     <string name="fast_forward_mode">Comportamento do botão de avanço rápido</string>
     <string name="power_saving_enabled_thermal">O aparelho está superaquecendo. Resolução interna reduzida e avanço rápido limitado a 2x até esfriar</string>
     <string name="power_saving_enabled_battery_game_mode">Modo de jogo bateria ativado. Resolução interna reduzida e avanço rápido limitado a 2x</string>
+    <string name="power_saving_enabled_battery_saver">Economia de bateria ativada. Resolução interna reduzida e avanço rápido limitado a 2x</string>
+    <string name="power_saving_enabled_thermal_resolution_only">O aparelho está superaquecendo. Resolução interna reduzida até esfriar</string>
+    <string name="power_saving_enabled_battery_game_mode_resolution_only">Modo de jogo bateria ativado. Resolução interna reduzida</string>
+    <string name="power_saving_enabled_battery_saver_resolution_only">Economia de bateria ativada. Resolução interna reduzida</string>
     <string name="power_saving_disabled">Economia de energia desativada. Configurações de vídeo e avanço rápido restauradas</string>
+    <string name="fast_forward_frame_skip">Pular quadros no avanço rápido</string>
+    <string name="fast_forward_frame_skip_summary">Desenha apenas os quadros que a tela consegue mostrar, deixando o avanço rápido mais veloz e economizando bateria. Desative se algum jogo apresentar falhas gráficas durante o avanço rápido.</string>
+    <string name="automatic_power_saving">Economia de energia automática</string>
+    <string name="automatic_power_saving_summary">Reduz a resolução interna quando o aparelho superaquece ou quando a economia de bateria ou o modo de jogo bateria está ativado.</string>
+    <string name="power_saving_limit_fast_forward">Limitar avanço rápido ao economizar energia</string>
+    <string name="power_saving_limit_fast_forward_summary">Limita o avanço rápido a 2x enquanto a economia de energia estiver ativa. O aparelho esquenta menos, mas o avanço rápido fica mais lento.</string>
     <string name="rewind_description">Quando ativado, um estado de salvamento é periodicamente salvo automaticamente. Sempre que quiser voltar em seu progresso por um curto período de tempo, basta abrir a tela de rebobinamento e selecionar o estado a partir do qual deseja retomar.\n\nEsteja ciente de que, ao ativar esse recurso, você pode experimentar interrupções ocasionais se o seu dispositivo não é poderoso o suficiente. Uma quantidade considerável de memória também é usada, dependendo de quantas vezes você deseja que o estado seja capturado e por quanto tempo ele deve ser mantido.</string>
     <string name="rewind_save_period">Período de salvamento</string>
     <string name="rewind_length">Duração do rebobinamento</string>

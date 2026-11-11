@@ -30,6 +30,28 @@
             android:entryValues="@array/fast_forward_mode_values"
             android:defaultValue="toggle" />
 
+    <SwitchPreference
+            android:key="enable_fast_forward_frame_skip"
+            android:title="@string/fast_forward_frame_skip"
+            android:summary="@string/fast_forward_frame_skip_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="true" />
+
+    <SwitchPreference
+            android:key="enable_automatic_power_saving"
+            android:title="@string/automatic_power_saving"
+            android:summary="@string/automatic_power_saving_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="true" />
+
+    <SwitchPreference
+            android:key="power_saving_limit_fast_forward"
+            android:title="@string/power_saving_limit_fast_forward"
+            android:summary="@string/power_saving_limit_fast_forward_summary"
+            android:dependency="enable_automatic_power_saving"
+            app:iconSpaceReserved="false"
+            android:defaultValue="false" />
+
     <com.smp.masterswitchpreference.MasterSwitchPreference
             android:key="enable_rewind"
             android:title="@string/rewind"

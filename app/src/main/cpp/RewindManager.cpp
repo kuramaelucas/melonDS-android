@@ -55,14 +55,14 @@ void RewindManager::UpdateRewindSettings(bool enabled, int rewindLengthSeconds, 
     Enabled = enabled;
 }
 
+bool RewindManager::IsCaptureFrame(int frame)
+{
+    return Enabled && RewindWindowSize() != 0 && frame % (RewindCapturingIntervalSeconds * FRAMES_PER_SECOND) == 0;
+}
+
 bool RewindManager::ShouldCaptureState(int currentFrame)
 {
-    if (!Enabled || RewindWindowSize() == 0)
-    {
-        return false;
-    }
-
-    if (currentFrame % (RewindCapturingIntervalSeconds * FRAMES_PER_SECOND) != 0)
+    if (!IsCaptureFrame(currentFrame))
     {
         return false;
     }

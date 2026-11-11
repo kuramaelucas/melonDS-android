@@ -107,6 +107,7 @@ int targetFps;
 float fastForwardSpeedMultiplier;
 bool limitFps = true;
 bool isFastForwardEnabled = false;
+bool fastForwardFrameSkip = true;
 
 jobject globalCameraManager;
 MelonDSAndroidCameraHandler* androidCameraHandler;
@@ -122,6 +123,7 @@ Java_me_magnum_melonds_MelonEmulator_setupEmulator(JNIEnv* env, jobject thiz, jo
 {
     MelonDSAndroid::EmulatorConfiguration finalEmulatorConfiguration = MelonDSAndroidConfiguration::buildEmulatorConfiguration(env, emulatorConfiguration);
     fastForwardSpeedMultiplier = finalEmulatorConfiguration.fastForwardSpeedMultiplier;
+    fastForwardFrameSkip = finalEmulatorConfiguration.fastForwardFrameSkip;
 
     globalCameraManager = env->NewGlobalRef(cameraManager);
 
@@ -304,6 +306,7 @@ Java_me_magnum_melonds_MelonEmulator_startEmulation(JNIEnv* env, jobject thiz)
     limitFps = true;
     targetFps = 60;
     isFastForwardEnabled = false;
+    MelonDSAndroid::setFrameSkipEnabled(false);
 
     {
         // Waits for any in-flight pump iteration, so that only the emulator thread drives the session from now on
@@ -745,6 +748,7 @@ JNIEXPORT void JNICALL
 Java_me_magnum_melonds_MelonEmulator_setFastForwardEnabled(JNIEnv* env, jobject thiz, jboolean enabled)
 {
     isFastForwardEnabled = enabled;
+    MelonDSAndroid::setFrameSkipEnabled(enabled && fastForwardFrameSkip);
     if (enabled) {
         limitFps = fastForwardSpeedMultiplier > 0;
         targetFps = 60 * fastForwardSpeedMultiplier;
@@ -782,8 +786,10 @@ Java_me_magnum_melonds_MelonEmulator_updateEmulatorConfiguration(JNIEnv* env, jo
     MelonDSAndroid::EmulatorConfiguration newConfiguration = MelonDSAndroidConfiguration::buildEmulatorConfiguration(env, emulatorConfiguration);
 
     fastForwardSpeedMultiplier = newConfiguration.fastForwardSpeedMultiplier;
+    fastForwardFrameSkip = newConfiguration.fastForwardFrameSkip;
 
     MelonDSAndroid::updateEmulatorConfiguration(std::make_unique<MelonDSAndroid::EmulatorConfiguration>(std::move(newConfiguration)));
+    MelonDSAndroid::setFrameSkipEnabled(isFastForwardEnabled && fastForwardFrameSkip);
 
     if (isFastForwardEnabled) {
         limitFps = fastForwardSpeedMultiplier > 0;

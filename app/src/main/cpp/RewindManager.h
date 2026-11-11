@@ -46,6 +46,7 @@ public:
     RewindManager(bool enabled, int rewindLengthSeconds, int rewindCapturingIntervalSeconds, size_t rewindBufferSize, size_t screenshotBufferSize);
     ~RewindManager();
     void UpdateRewindSettings(bool enabled, int rewindLengthSeconds, int rewindCapturingIntervalSeconds);
+    bool IsCaptureFrame(int frame);
     bool ShouldCaptureState(int currentFrame);
     RewindSaveState* GetNextRewindSaveState(int currentFrame);
     std::list<RewindSaveState> GetRewindWindow();

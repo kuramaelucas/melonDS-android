@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <ctime>
 #include <chrono>
 #include <EGL/egl.h>
@@ -29,6 +30,8 @@ namespace MelonDSAndroid
 
 const int kRewindBufferSize = 1024 * 1024 * 20; // Use 20MB per savestate
 const int kRewindScreenshotSize = 256 * 384 * 4;
+// While skipping frames, draw at most as many frames as the display can show at the DS frame rate
+const std::chrono::nanoseconds kSkippedFrameDrawInterval(16666666);
 
 MelonInstance::MelonInstance(int instanceId, std::shared_ptr<EmulatorConfiguration> configuration, std::unique_ptr<melonDS::NDSArgs> args, std::shared_ptr<Net> net, std::unique_ptr<ScreenshotRenderer> screenshotRenderer, int consoleType) :
     instanceId(instanceId),
@@ -319,24 +322,33 @@ u32 MelonInstance::runFrame()
         screenHeight = 192 + 1;
     }
 
-    Frame* renderFrame = frameQueue.getRenderFrame();
+    // The 3D engine starts rendering a frame during the previous one. As such, this frame's fate has already been decided, and the decision being made now is for the next one
+    bool skipFrameDraw = nds->GPU.WillSkipNextFrameDraw();
+    nds->GPU.SkipNextFrameRender = shouldSkipNextFrame();
 
+    Frame* renderFrame = nullptr;
     EGLDisplay currentDisplay = eglGetCurrentDisplay();
-    // Delete old render fence
-    if (renderFrame->renderFence)
-    {
-        eglDestroySyncKHR(currentDisplay, renderFrame->renderFence);
-        renderFrame->renderFence = 0;
-    }
 
-    // Ensure presentation is finished
-    if (renderFrame->presentFence)
+    if (!skipFrameDraw)
     {
-        eglWaitSyncKHR(currentDisplay, renderFrame->presentFence, 0);
-    }
+        renderFrame = frameQueue.getRenderFrame();
 
-    // Validate frame after ensuring that the frame has finished presenting
-    frameQueue.validateRenderFrame(renderFrame, screenWidth, screenHeight * 2);
+        // Delete old render fence
+        if (renderFrame->renderFence)
+        {
+            eglDestroySyncKHR(currentDisplay, renderFrame->renderFence);
+            renderFrame->renderFence = 0;
+        }
+
+        // Ensure presentation is finished
+        if (renderFrame->presentFence)
+        {
+            eglWaitSyncKHR(currentDisplay, renderFrame->presentFence, 0);
+        }
+
+        // Validate frame after ensuring that the frame has finished presenting
+        frameQueue.validateRenderFrame(renderFrame, screenWidth, screenHeight * 2);
+    }
 
     [[unlikely]] if (nds->GPU.GetRenderer3D().NeedsShaderCompile())
     {
@@ -351,7 +363,7 @@ u32 MelonInstance::runFrame()
     }
 
     bool isRendererAccelerated = nds->GPU.GetRenderer3D().Accelerated;
-    if (isRendererAccelerated)
+    if (isRendererAccelerated && !skipFrameDraw)
     {
         int backBuffer = nds->GPU.FrontBuffer ? 0 : 1;
         nds->GPU.GetRenderer3D().SetOutputTexture(backBuffer, renderFrame->frameTexture);
@@ -361,7 +373,11 @@ u32 MelonInstance::runFrame()
     u32 nLines = nds->RunFrame();
     retroAchievementsManager->FrameUpdate();
 
-    if (!isRendererAccelerated)
+    if (skipFrameDraw)
+    {
+        // Nothing was produced, so there's nothing to upload or present
+    }
+    else if (!isRendererAccelerated)
     {
         int frontbuf = nds->GPU.FrontBuffer;
         if (nds->GPU.Framebuffer[frontbuf][0] && nds->GPU.Framebuffer[frontbuf][1])
@@ -377,16 +393,19 @@ u32 MelonInstance::runFrame()
         // Do nothing. Emulator already renders into the texture, which was set-up above
     }
 
-    bool isSleeping = nds->CPUStop & CPUStop_Sleep;
-    if (!isSleeping) [[likely]]
+    if (!skipFrameDraw)
     {
-        renderFrame->renderFence = eglCreateSyncKHR(currentDisplay, EGL_SYNC_FENCE_KHR, nullptr);
-        glFlush();
-        frameQueue.pushRenderedFrame(renderFrame);
-    }
-    else
-    {
-        frameQueue.discardRenderedFrame(renderFrame);
+        bool isSleeping = nds->CPUStop & CPUStop_Sleep;
+        if (!isSleeping) [[likely]]
+        {
+            renderFrame->renderFence = eglCreateSyncKHR(currentDisplay, EGL_SYNC_FENCE_KHR, nullptr);
+            glFlush();
+            frameQueue.pushRenderedFrame(renderFrame);
+        }
+        else
+        {
+            frameQueue.discardRenderedFrame(renderFrame);
+        }
     }
 
     if (ndsSave)
@@ -399,8 +418,9 @@ u32 MelonInstance::runFrame()
         firmwareSave->CheckFlush();
 
     frame++;
-    bool needsRewindCapture = rewindManager.ShouldCaptureState(frame);
-    bool needsScreenshot = screenshotRenderer->isScreenshotPending();
+    // Both of these need the frame's output, and are postponed if there isn't any
+    bool needsRewindCapture = !skipFrameDraw && rewindManager.ShouldCaptureState(frame);
+    bool needsScreenshot = !skipFrameDraw && screenshotRenderer->isScreenshotPending();
 
     if (needsRewindCapture || needsScreenshot) [[unlikely]]
         screenshotRenderer->renderScreenshot(&nds->GPU, currentRenderer, renderFrame);
@@ -418,6 +438,29 @@ void MelonInstance::stop()
 {
     retroAchievementsManager = nullptr;
     screenshotRenderer->cleanup();
+}
+
+void MelonInstance::setFrameSkipEnabled(bool enabled)
+{
+    frameSkipEnabled = enabled;
+}
+
+bool MelonInstance::shouldSkipNextFrame()
+{
+    if (!frameSkipEnabled)
+        return false;
+
+    // The current frame will be number frame + 1, so the next one is frame + 2
+    if (screenshotRenderer->isScreenshotPending() || rewindManager.IsCaptureFrame(frame + 2))
+        return false;
+
+    auto now = std::chrono::steady_clock::now();
+    if (now < nextFrameDrawTime)
+        return true;
+
+    // Keep the draw rate stable by advancing from the previous time, unless emulation fell behind
+    nextFrameDrawTime = std::max(nextFrameDrawTime + kSkippedFrameDrawInterval, now);
+    return false;
 }
 
 void MelonInstance::updateMotionData(float ax, float ay, float az, float rx, float ry, float rz)
