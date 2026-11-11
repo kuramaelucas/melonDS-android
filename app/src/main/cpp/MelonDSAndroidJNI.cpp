@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <pthread.h>
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <unistd.h>
@@ -50,6 +51,7 @@ bool started = false;
 // connections, advertising the session and receiving player updates). While a game is running,
 // the emulator thread takes over and the pump stays idle.
 std::mutex multiplayerMutex;
+std::condition_variable multiplayerPumpCondition;
 std::thread multiplayerPumpThread;
 bool multiplayerPumpRunning = false;
 bool multiplayerPumpActive = false;
@@ -58,21 +60,29 @@ static void startMultiplayerPump()
 {
     std::lock_guard<std::mutex> lock(multiplayerMutex);
     multiplayerPumpActive = !started;
+
+    multiplayerPumpCondition.notify_all();
     if (multiplayerPumpRunning)
         return;
 
     multiplayerPumpRunning = true;
     multiplayerPumpThread = std::thread([]() {
-        for (;;)
+        std::unique_lock<std::mutex> innerLock(multiplayerMutex);
+        while (multiplayerPumpRunning)
         {
+            if (!multiplayerPumpActive)
             {
-                std::lock_guard<std::mutex> innerLock(multiplayerMutex);
-                if (!multiplayerPumpRunning)
-                    return;
-                if (multiplayerPumpActive && melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
-                    melonDS::MPInterface::Get().Process();
+                // Sleep until needed instead of periodically waking up the CPU during the whole game
+                multiplayerPumpCondition.wait(innerLock, []() { return multiplayerPumpActive || !multiplayerPumpRunning; });
+                continue;
             }
+
+            if (melonDS::MPInterface::GetType() == melonDS::MPInterface_LAN)
+                melonDS::MPInterface::Get().Process();
+
+            innerLock.unlock();
             usleep(8000);
+            innerLock.lock();
         }
     });
 }
@@ -84,6 +94,7 @@ static void stopMultiplayerPump()
         if (!multiplayerPumpRunning)
             return;
         multiplayerPumpRunning = false;
+        multiplayerPumpCondition.notify_all();
     }
     multiplayerPumpThread.join();
 }
@@ -684,6 +695,7 @@ Java_me_magnum_melonds_MelonEmulator_stopEmulation(JNIEnv* env, jobject thiz)
         // The session outlives the game, so hand it back to the background pump
         std::lock_guard<std::mutex> lock(multiplayerMutex);
         multiplayerPumpActive = true;
+        multiplayerPumpCondition.notify_all();
     }
 
     env->DeleteGlobalRef(globalCameraManager);
