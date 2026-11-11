@@ -3,7 +3,7 @@
 
 #define MIC_GAIN 10
 
-MicInputOboeCallback::MicInputOboeCallback(int bufferSize, std::mutex& micBufferMutex, std::ostream* recordingStream) : bufferSize(bufferSize), micBufferMutex(micBufferMutex), _recordingStream(recordingStream) {
+MicInputOboeCallback::MicInputOboeCallback(int bufferSize, std::mutex& micBufferMutex) : bufferSize(bufferSize), micBufferMutex(micBufferMutex) {
     this->buffer = new s16[bufferSize];
 }
 
@@ -30,7 +30,6 @@ MicInputOboeCallback::onAudioReady(oboe::AudioStream *stream, void *audioData, i
     float res_timer = -0.5;
     int res_pos = 0;
 
-    int startBufferOffset = bufferOffset;
     for (int i = 0; i < outlen; i++)
     {
         if (bufferCount >= maxlen)
@@ -53,20 +52,6 @@ MicInputOboeCallback::onAudioReady(oboe::AudioStream *stream, void *audioData, i
         {
             res_timer -= 1.0;
             res_pos++;
-        }
-    }
-
-    if (_recordingStream)
-    {
-        if (bufferOffset > startBufferOffset)
-        {
-            int writeLen = outlen > maxlen ? maxlen : outlen;
-            _recordingStream->write((char*)&buffer[startBufferOffset], writeLen * sizeof(s16));
-        }
-        else
-        {
-            _recordingStream->write((char*)&buffer[startBufferOffset], (maxlen - startBufferOffset) * sizeof(s16));
-            _recordingStream->write((char*)buffer, bufferOffset * sizeof(s16));
         }
     }
 

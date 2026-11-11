@@ -15,14 +15,12 @@ public:
     int bufferCount = 0;
     float micSampleFrac = 0;
 
-    MicInputOboeCallback(int bufferSize, std::mutex& micBufferMutex) : MicInputOboeCallback(bufferSize, micBufferMutex, nullptr) { };
-    MicInputOboeCallback(int bufferSize, std::mutex& micBufferMutex, std::ostream* recordingStream);
+    MicInputOboeCallback(int bufferSize, std::mutex& micBufferMutex);
     ~MicInputOboeCallback();
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t numFrames) override;
 
 private:
     std::mutex& micBufferMutex;
-    std::ostream* _recordingStream;
 };
 
 #endif //MELONDS_ANDROID_MICINPUTOBOECALLBACK_H
