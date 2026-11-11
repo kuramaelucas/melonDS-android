@@ -53,8 +53,8 @@ object MelonModule {
 
     @Provides
     @Singleton
-    fun providePowerSavingMonitor(@ApplicationContext context: Context): PowerSavingMonitor {
-        return AndroidPowerSavingMonitor(context)
+    fun providePowerSavingMonitor(@ApplicationContext context: Context, sharedPreferences: SharedPreferences): PowerSavingMonitor {
+        return AndroidPowerSavingMonitor(context, sharedPreferences)
     }
 
     @Provides

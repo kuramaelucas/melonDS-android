@@ -260,7 +260,8 @@ namespace MelonDSAndroid
         actualMicSource = audioSettings.micSource;
         currentAudioSettings = audioSettings;
 
-        if (audioSettings.soundEnabled)
+        // A muted stream would still wake up the CPU for every audio callback
+        if (audioSettings.soundEnabled && audioSettings.volume > 0)
             setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
 
         if (audioSettings.micSource == 2)
@@ -269,7 +270,7 @@ namespace MelonDSAndroid
 
     void updateAudioSettings(AudioSettings audioSettings)
     {
-        if (audioSettings.soundEnabled && currentAudioSettings.volume > 0) {
+        if (audioSettings.soundEnabled && audioSettings.volume > 0) {
             if (!audioStream) {
                 setupAudioOutputStream(audioSettings.audioLatency, audioSettings.volume);
             } else if (currentAudioSettings.audioLatency != audioSettings.audioLatency || currentAudioSettings.volume != audioSettings.volume) {
